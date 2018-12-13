@@ -309,7 +309,7 @@ def create_app(config_name):
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
 
-    @app.route("api/v1/getlimit", methods=['GET'])
+    @app.route("/api/v1/getlimit", methods=['GET'])
     def getLimit():
       x = setting.find_one({'noID': 1})
       data = json.loads(json_util.dumps(x))
