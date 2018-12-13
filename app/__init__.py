@@ -118,8 +118,8 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
-                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': {'now_harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
+                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan':{'tagihan': indx['tagihan'], \
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
           info.update({'status' : a[i]['status'], 'noID': i})
           content.append(info)
@@ -129,29 +129,6 @@ def create_app(config_name):
         item['longitude'] = item ['longitude'].replace('_', '.')
         item['latitude'] = item['latitude'].replace('_', '.')
         item['prtgsite'] = item ['prtgsite'].replace('-', '.')
-      return jsonify(content)
-
-    @app.route("/api/v1/sla")
-    def statusSLA():
-      global url_dashboard
-      status_dashboard = getAPIDashboard(url_dashboard)
-      info = {}
-      content = []
-      a = [{"id": str(d['sensorID_new']), "sla": d['snmp'], "tagihan": d['tagihan'], "harga_new": d['harga']} for d in status_dashboard if 'sensorID_new' and 'snmp' and 'tagihan' and 'harga' in d]
-      for i in range(len(a)):
-        x = collection.find_one({"sensorID": a[i]['id']})
-        if x is not None:
-          data = json.loads(json_util.dumps(x))
-          info.update(data)
-          info.update({'sla' : a[i]['sla'], 'tagihan': a[i]['tagihan'], 'harga': a[i]['harga_new'], 'noID': i})
-          content.append(info)
-        info = {}
-        for item in content:
-          item['c_n'] = item['c_n'].replace('_', '.')
-          item['longitude'] = item ['longitude'].replace('_', '.')
-          item['latitude'] = item['latitude'].replace('_', '.')
-          item['harga'] = int(item['harga'])
-          item['prtgsite'] = item ['prtgsite'].replace('-', '.')
       return jsonify(content)
 
     @app.route("/api/v1/topsla")
@@ -197,8 +174,8 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
-                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': {'now_harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
+                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': {'tagihan': indx['tagihan'], \
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
@@ -220,31 +197,41 @@ def create_app(config_name):
     def topLoss():
       global url_downtimesince1
       global url_downtimesince2
+      global url_dashboard
       loss = getAPIData(url_downtimesince1, url_downtimesince2)
+      loss_dashboard = getAPIDashboard(url_dashboard)
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
-      millisInMonth = daysofMonth * 86400000
+      secondInMonth = daysofMonth * 86400
       info = {}
       content = []
-      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw']} for d in loss if 'objid' and 'downtimesince_raw' in d]
+      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
+      for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
+      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
+      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
+      "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
+      'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
-          info.update(data)
-          info.update({'downtimesince_raw' : a[i]['downtimesince_raw']})
+          for indx in b:
+             if (indx['id'] == data['pingID']):
+                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': {'tagihan': indx['tagihan'], \
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
+                info.update(data)
+          info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
         info = {}
       for item in content:
         item['c_n'] = item['c_n'].replace('_', '.')
         item['longitude'] = item ['longitude'].replace('_', '.')
         item['latitude'] = item['latitude'].replace('_', '.')
-        item['harga'] = int(item['harga'])
         item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(millisInMonth)) * item['harga']
+        item['loss'] = (x/float(secondInMonth)) * item['harga']['now_harga']
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content[:10])
