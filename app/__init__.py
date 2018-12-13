@@ -107,7 +107,6 @@ def create_app(config_name):
       info = {}
       content = []
       a = [{"id": str(d['objid']), "status": d['status']} for d in status_all if 'objid' and 'status' in d]
-      print(b)
       b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
       "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
       "new_harga": d['new_harga'], } for d in status_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
