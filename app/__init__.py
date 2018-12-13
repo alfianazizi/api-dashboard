@@ -7,7 +7,7 @@ import requests
 import calendar
 import datetime
 from time import sleep, strftime, time
-from flask import jsonify
+from flask import jsonify, request
 from flask_cors import CORS
 from operator import itemgetter
 from pymongo import MongoClient
@@ -18,6 +18,7 @@ from instance.config import app_config
 client = MongoClient()
 db=client.dashboard
 collection = db.master
+setting = db.settings
 
 url_uptime1 = "https://202.43.73.155/api/table.json?content=sensors&columns=objid,device,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_uptime2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
@@ -312,4 +313,14 @@ def create_app(config_name):
         item['utility'] = utility
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
+
+      @app.route('/limitsetting', methods=['POST'])
+      def limit():
+        limit = requests.form.get('limit')
+        if limit is not None:
+          setting.update({"limit": limit})
+          return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
+        else:
+          return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
     return app
