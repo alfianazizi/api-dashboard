@@ -314,14 +314,18 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
-      @app.route('/limitsetting', methods=['POST'])
+      @app.route("/limitsetting", methods=['GET', 'POST'])
       def limit():
-        limit = requests.form['limit']
-        print(limit)
-        if limit is not None:
-          setting.update({"limit": limit})
-          return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
-        else:
-          return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+        if request.method == 'GET':
+          return "Got in via GET"
+        elif request.method == 'POST':
+          return "Got in via POST"
+        # limit = requests.form['limit']
+        # print(limit)
+        # if limit is not None:
+        #   setting.update({"limit": limit})
+        #   return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
+        # else:
+        #   return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
 
     return app
