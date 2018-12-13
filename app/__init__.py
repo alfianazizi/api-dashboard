@@ -6,6 +6,7 @@ import json
 import requests
 import calendar
 import datetime
+import os
 from time import sleep, strftime, time
 from flask import jsonify, request
 from flask_cors import CORS
@@ -31,6 +32,7 @@ url_downtimesince2 = "https://202.43.73.156/api/table.json?content=sensors&colum
 url_all1 = "https://202.43.73.155/api/table.json?content=sensors&id=2477&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
 url_all2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
 url_dashboard = "http://182.23.61.67/api/getdatabase/11/2018/old/7"
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def create_app(config_name):
     app = FlaskAPI(__name__, instance_relative_config=True)
@@ -315,5 +317,21 @@ def create_app(config_name):
       data = json.loads(json_util.dumps(x))
 
       return jsonify(data['limit'])
+
+    @app.route("/api/v1/upload", methods['POST'])
+    def upload():
+      target = os.path.join(APP_ROOT, 'files/')
+      print(target)
+
+      if not os.path.isdir(target):
+        os.mkdir(target)
+
+      for file in request.files.getlist("file"):
+        print(file)
+        filename = file.filename
+        destination = "/".join([target, filename])
+        print(destination)
+        file.save(destination)
+      return jsonify({'ok': True})
 
     return app
