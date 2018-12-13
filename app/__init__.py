@@ -103,15 +103,24 @@ def create_app(config_name):
       global url_all2
       global url_dashboard
       status_all = getAPIData(url_all1, url_all2)
-
+      status_dashboard = getAPIDashboard(url_dashboard)
       info = {}
       content = []
-      a = [{"id": str(d['objid']), "status": d['status'], "downtimesince_raw": d['downtimesince_raw']} for d in status_all if 'objid' and 'status' and 'downtimesince_raw' in d]
+      a = [{"id": str(d['objid']), "status": d['status']} for d in status_all if 'objid' and 'status' in d]
+      print(b)
+      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
+      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
+      "new_harga": d['new_harga'], } for d in status_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
+      'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
       for i in range(len(a)):
         x = collection.find_one({"sensorID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
-          info.update(data)
+          for indx in b:
+             if (indx['id'] == data['pingID']):
+                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']})
+                info.update(data)
           info.update({'status' : a[i]['status'], 'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
         info = {}
@@ -183,7 +192,6 @@ def create_app(config_name):
       "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
       "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
-      print(b)
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
         if x is not None:
@@ -193,7 +201,7 @@ def create_app(config_name):
                 data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']})
                 info.update(data)
-          info.update({'downtimesince_raw' : a[i]['downtimesince_raw']})
+          info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
         info = {}
       for item in content:
