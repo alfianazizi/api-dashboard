@@ -316,7 +316,7 @@ def create_app(config_name):
 
       @app.route('/limitsetting', methods=['POST'])
       def limit():
-        limit = requests.form.get('limit')
+        limit = requests.get('limit')
         if limit is not None:
           setting.update({"limit": limit})
           return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
