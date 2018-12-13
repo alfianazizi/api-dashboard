@@ -120,7 +120,7 @@ def create_app(config_name):
                 data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']})
                 info.update(data)
-          info.update({'status' : a[i]['status'], 'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
+          info.update({'status' : a[i]['status'], 'noID': i})
           content.append(info)
         info = {}
       for item in content:
