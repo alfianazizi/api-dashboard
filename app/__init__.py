@@ -188,7 +188,7 @@ def create_app(config_name):
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(secondInMonth)) * item['harga']['now_harga']
+        item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content)
@@ -231,7 +231,7 @@ def create_app(config_name):
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(secondInMonth)) * item['harga']['now_harga']
+        item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content[:10])
