@@ -199,7 +199,7 @@ def create_app(config_name):
           for indx in b:
              if (indx['id'] == data['pingID']):
                 data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
-                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': [{'now_harga: 'indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}]})
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': [{'now_harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}]})
                 info.update(data)
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
