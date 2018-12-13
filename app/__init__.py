@@ -128,7 +128,6 @@ def create_app(config_name):
         item['c_n'] = item['c_n'].replace('_', '.')
         item['longitude'] = item ['longitude'].replace('_', '.')
         item['latitude'] = item['latitude'].replace('_', '.')
-        item['harga'] = int(item['harga'])
         item['prtgsite'] = item ['prtgsite'].replace('-', '.')
       return jsonify(content)
 
@@ -208,12 +207,11 @@ def create_app(config_name):
         item['c_n'] = item['c_n'].replace('_', '.')
         item['longitude'] = item ['longitude'].replace('_', '.')
         item['latitude'] = item['latitude'].replace('_', '.')
-        item['harga'] = int(item['harga'])
         item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(secondInMonth)) * item['harga']
+        item['loss'] = (x/float(secondInMonth)) * item['harga']['now_harga']
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content)
