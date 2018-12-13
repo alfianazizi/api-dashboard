@@ -299,8 +299,8 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/limitsetting", methods=['POST'])
-    def limit():
+    @app.route("/api/v1/setlimit", methods=['POST'])
+    def setLimit():
         limit = request.form['limit']
         print(limit)
         if limit is not None:
@@ -308,5 +308,12 @@ def create_app(config_name):
           return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
+    @app.route("api/v1/getlimit", methods=['GET'])
+    def getLimit():
+      x = setting.find_one({'noID': 1})
+      data = json.loads(json_util.dumps(x))
+
+      return (data['limit'])
 
     return app
