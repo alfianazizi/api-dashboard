@@ -304,7 +304,7 @@ def create_app(config_name):
         limit = request.form['limit']
         print(limit)
         if limit is not None:
-          setting.update_one({'noID': 1},{ '$set': {'limit': int(limit)}})
+          setting.update_one({'noID': 1},{ '$set': {'limit': limit}})
           return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
