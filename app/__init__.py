@@ -118,7 +118,7 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan':{'tagihan': indx['tagihan'], \
+                data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan':{'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
           info.update({'status' : a[i]['status'], 'noID': i})
@@ -174,7 +174,7 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': {'tagihan': indx['tagihan'], \
+                data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan': {'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
@@ -217,7 +217,7 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': {'tagihan': indx['tagihan'], \
+                data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan': {'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
