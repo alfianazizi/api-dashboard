@@ -320,7 +320,7 @@ def create_app(config_name):
       #   return "Got in via GET"
       # elif request.method == 'POST':
       #   return "Got in via POST"
-        limit = requests.form['limit']
+        limit = request.form['limit']
         print(limit)
         if limit is not None:
           setting.update({"limit": limit})
