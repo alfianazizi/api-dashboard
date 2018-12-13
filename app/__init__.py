@@ -76,7 +76,7 @@ def create_app(config_name):
          if x['lastvalue_raw'] == "":
             x['lastvalue_raw'] = 0
          x['lastvalue'] = x['lastvalue'].replace(' ', '')
-      sorted_downtime = sorted(downtime, key=itemgetter('lastvalue_raw')) 
+      sorted_downtime = sorted(downtime, key=itemgetter('lastvalue_raw'))
 
       return jsonify(sorted_downtime[:10])
 
@@ -177,8 +177,12 @@ def create_app(config_name):
       secondInMonth = daysofMonth * 86400
       info = {}
       content = []
-      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw']} for d in loss if 'objid' and 'downtimesince_raw' in d]
-      b = [{"id": str(d['sensorPing']), "sla": d['snmp']} for d in loss_dashboard if 'sensorPing' and 'snmp' in d]
+      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
+      for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
+      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
+      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
+      "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
+      'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
       print(b)
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
@@ -186,7 +190,8 @@ def create_app(config_name):
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla': indx['sla']}) 
+                data.update({'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla'], 'tagihan': indx['tagihan'], \
+                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new'], 'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']})
                 info.update(data)
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw']})
           content.append(info)
