@@ -314,12 +314,8 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
-    @app.route("/limitsetting", methods=['POST'])
+    @app.route("/api/v1/limitsetting", methods=['POST'])
     def limit():
-      # if request.method == 'GET':
-      #   return "Got in via GET"
-      # elif request.method == 'POST':
-      #   return "Got in via POST"
         limit = request.form['limit']
         print(limit)
         if limit is not None:
