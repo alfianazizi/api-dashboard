@@ -314,6 +314,6 @@ def create_app(config_name):
       x = setting.find_one({'noID': 1})
       data = json.loads(json_util.dumps(x))
 
-      return (data['limit'])
+      return jsonify(data['limit'])
 
     return app
