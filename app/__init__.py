@@ -318,9 +318,9 @@ def create_app(config_name):
 
       return jsonify(data['limit'])
 
-    @app.route("/api/v1/upload", methods['POST'])
+    @app.route("/api/v1/upload", methods=['POST'])
     def upload():
-      target = os.path.join(APP_ROOT, 'files/')
+      target = "/home/aziz/isp-dashboard/src/logs"
       print(target)
 
       if not os.path.isdir(target):
