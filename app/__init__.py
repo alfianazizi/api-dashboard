@@ -7,6 +7,7 @@ import requests
 import calendar
 import datetime
 import os
+import csv
 from time import sleep, strftime, time
 from flask import jsonify, request
 from flask_cors import CORS
@@ -320,7 +321,7 @@ def create_app(config_name):
 
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
-      target = "/home/aziz/isp-dashboard/src/logs"
+      target = os.path.join(APP_ROOT, 'files/')
       print(target)
 
       if not os.path.isdir(target):
@@ -333,5 +334,13 @@ def create_app(config_name):
         print(destination)
         file.save(destination)
       return jsonify({'ok': True})
+
+    @app.route("/api/v1/getsensor/<sensorid>/<int:year>/<int:month>/<int:day>")
+    def getSensorDetail(sensorid,year,month,day):
+      target = os.path.join(APP_ROOT, 'files/')
+      csvfile = open(target + sensorid + '-' + str(year) + '-' + str(month) '-' str(day) + '.csv', 'r')
+      reader = csv.DictReader(csvfile)
+      jsonreader = json.dumps(reader)
+      return jsonify(jsonreader)
 
     return app
