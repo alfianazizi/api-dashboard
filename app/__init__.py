@@ -335,12 +335,31 @@ def create_app(config_name):
         file.save(destination)
       return jsonify({'ok': True})
 
+    @app.route("/api/v1/getsensor/<sensorid>/<int:year>/<int:month>")
+    def getSensorPerMonth(sensorid,year,month):
+      target = os.path.join(APP_ROOT, 'files/')
+      content = []
+      for i in range(32):
+        print(i)
+        try:
+          file = target + sensorid + '-' + str(year) + '-' + str(month) + '-' + str(i).zfill(2) + '.csv'
+          csvfile = open(file, 'r')
+          reader = csv.DictReader(csvfile)
+          for row in reader:
+            content.append(row)
+        except IOError:
+          print("Could not read file:", file)
+          pass
+      return jsonify(content)
+
     @app.route("/api/v1/getsensor/<sensorid>/<int:year>/<int:month>/<int:day>")
     def getSensorDetail(sensorid,year,month,day):
+      content = []
       target = os.path.join(APP_ROOT, 'files/')
-      csvfile = open(target + sensorid + '-' + str(year) + '-' + str(month) '-' str(day) + '.csv', 'r')
+      csvfile = open(target + sensorid + '-' + str(year) + '-' + str(month) + '-' + str(day) + '.csv', 'r')
       reader = csv.DictReader(csvfile)
-      jsonreader = json.dumps(reader)
-      return jsonify(jsonreader)
+      for row in reader:
+         content.append(row)
+      return jsonify(content)
 
     return app
