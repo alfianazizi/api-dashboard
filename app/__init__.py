@@ -319,6 +319,31 @@ def create_app(config_name):
 
       return jsonify(data['limit'])
 
+    @app.route("/api/v1/upgrade", methods=['GET'])
+    def upgradeBandwidth():
+     total = 0
+     today = datetime.date.today()
+     first = today.replace(day=1)
+     lastMonth = first - datetime.timedelta(days=1)
+     lastMonth = lastMonth.replace(day=1)
+     param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
+     url = 'http://122.248.39.155:5000/api/v1/status'
+     response = requests.get(url)
+     raw_data = json.loads(response.text)
+     for key in raw_data:
+       traffic_id = key['trafficID']
+       url_volume = 'https://202.43.73.155/api/historicdata.json?id='
+       url_traffic = url_volume + str(traffic_id) + param
+       res = requests.get(url_traffic, verify=False)
+       data = json.loads(res.text)
+       for item in data['histdata']:
+         print(item['Traffic Total (volume)'])
+         if item['Traffic Total (volume)'] == "":
+            item['Traffic Total (volume)'] = 0.0
+         total = total + float(item['Traffic Total (volume)'])
+       key['total_volume'] = total
+     return jsonify(raw_data)
+
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
       target = os.path.join(APP_ROOT, 'files/')
