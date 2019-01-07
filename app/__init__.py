@@ -13,7 +13,8 @@ from flask import jsonify, request
 from flask_cors import CORS
 from operator import itemgetter
 from pymongo import MongoClient
-
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # local import
 from instance.config import app_config
 
@@ -327,21 +328,27 @@ def create_app(config_name):
      lastMonth = first - datetime.timedelta(days=1)
      lastMonth = lastMonth.replace(day=1)
      param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     url = 'http://122.248.39.155:5000/api/v1/status'
-     response = requests.get(url)
+     url = 'localhost:5000/api/v1/status'
+     response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
      for key in raw_data:
-       traffic_id = key['trafficID']
-       url_volume = 'https://202.43.73.155/api/historicdata.json?id='
-       url_traffic = url_volume + str(traffic_id) + param
-       res = requests.get(url_traffic, verify=False)
-       data = json.loads(res.text)
-       for item in data['histdata']:
-         print(item['Traffic Total (volume)'])
-         if item['Traffic Total (volume)'] == "":
-            item['Traffic Total (volume)'] = 0.0
-         total = total + float(item['Traffic Total (volume)'])
-       key['total_volume'] = total
+         try:
+           traffic_id = key['trafficID']
+           url_volume = 'https://202.43.73.155/api/historicdata.json?id='
+           url_traffic = url_volume + str(traffic_id) + param
+           res = requests.get(url_traffic, verify=False)
+           print(res.text)
+           data = json.loads(res.text)
+           if data is not None:
+               for item in data['histdata']:
+                 #print(item['Traffic Total (volume)'])
+                 if item['Traffic Total (volume)'] == "":
+                    item['Traffic Total (volume)'] = 0.0
+                 total = total + float(item['Traffic Total (volume)'])
+               key['total_volume'] = total
+               print("Total Traffic Bulan ini = {}". format(total))
+         except (KeyError, ValueError) as e:
+            pass
      return jsonify(raw_data)
 
     @app.route("/api/v1/upload", methods=['POST'])
