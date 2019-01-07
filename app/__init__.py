@@ -342,6 +342,7 @@ def create_app(config_name):
             item['Traffic Total (volume)'] = 0.0
          total = total + float(item['Traffic Total (volume)'])
        key['total_volume'] = total
+     print(raw_data)
      return jsonify(raw_data)
 
     @app.route("/api/v1/upload", methods=['POST'])
