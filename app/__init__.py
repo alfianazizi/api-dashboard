@@ -357,6 +357,20 @@ def create_app(config_name):
             pass
      return jsonify(raw_data)
 
+    @app.route("/api/v1/listupgrade/<int:year>/<int:month>", methods=['GET'])
+    def listupgrade(year,month):
+        info = {}
+        content = []
+        collection = "tb_traffic_" + str(year) + "_" + str(month)
+        tb = db[collection]
+        for x in tb.find():
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                content.append(info)
+            info = {}
+        return jsonify(content)
+
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
       target = os.path.join(APP_ROOT, 'files/')
