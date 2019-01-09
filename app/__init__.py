@@ -23,6 +23,10 @@ db=client.dashboard
 collection = db.master
 setting = db.settings
 
+now = datetime.datetime.now()
+last_month = now.month-1 if now.month > 1 else 12
+last_year = now.year - 1
+
 url_uptime1 = "https://202.43.73.155/api/table.json?content=sensors&columns=objid,device,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_uptime2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_ping1 = "https://202.43.73.155/api/table.json?content=sensors&id=2477&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=3"
@@ -33,7 +37,8 @@ url_downtimesince1 = "https://202.43.73.155/api/table.json?content=sensors&colum
 url_downtimesince2 = "https://202.43.73.156/api/table.json?content=sensors&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
 url_all1 = "https://202.43.73.155/api/table.json?content=sensors&id=2477&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
 url_all2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
-url_dashboard = "http://182.23.61.67/api/getdatabase/11/2018/old/7"
+url_dashboard = "http://182.23.61.67/api/getdatabase/" + str(last_month) + "/" + str(last_year) + "/old/7"
+#url_dashboard = "http://182.23.61.67/api/getdatabase/11/2018/old/7"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def create_app(config_name):
@@ -326,14 +331,12 @@ def create_app(config_name):
      first = today.replace(day=1)
      lastMonth = first - datetime.timedelta(days=1)
      lastMonth = lastMonth.replace(day=1)
-     last2Month = lastMonth - datetime.timedelta(days=1)
-     last2Month = last2Month.replace(day=1)
-     last3Month = last2Month - datetime.timedelta(days=1)
-     last3Month = last3Month.replace(day=1)
-     #daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
-     daysinMonth =  calendar.monthrange(last3Month.year, last3Month.month)[1]
-     #param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     param = '&sdate=' + last3Month.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + last2Month.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
+     #last2Month = lastMonth - datetime.timedelta(days=1)
+     #last2Month = last2Month.replace(day=1)
+     #last3Month = last2Month - datetime.timedelta(days=1)
+     #last3Month = last3Month.replace(day=1)
+     daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
+     param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
      url = 'http://122.248.39.155:5000/api/v1/status'
      response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
