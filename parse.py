@@ -7,12 +7,9 @@ today = datetime.date.today()
 first = today.replace(day=1)
 lastMonth = first - datetime.timedelta(days=1)
 lastMonth = lastMonth.replace(day=1)
-last2Month = lastMonth - datetime.timedelta(days=1)
-last2Month = last2Month.replace(day=1)
-last3Month = last2Month - datetime.timedelta(days=1)
-last3Month = last3Month.replace(day=1)
-print(last3Month.strftime('%Y_%m'))
-filename = "tb_traffic_" + last3Month.strftime('%Y_%m')
+#print(lastMonth.strftime('%Y_%m'))
+filename = "tb_traffic_" + lastMonth.strftime('%Y_%m')
+#filename = "tb_traffic_2018_11"
 
 client = MongoClient()
 db=client.dashboard
