@@ -50,7 +50,7 @@ def create_app(config_name):
       json_data2 = json.loads(response2.text)
       data = json_data1["sensors"] + json_data2["sensors"]
 
-      return data
+print      return data
 
     def getAPIDashboard(x):
       r = requests.post(url=x)
@@ -256,7 +256,7 @@ def create_app(config_name):
           info.update({'traffic' : a[i]['traffic']})
           content.append(info)
         info = {}
-      #print(content)
+      print(content)
       for item in content:
         item['c_n'] = item['c_n'].replace('_', '.')
         item['longitude'] = item ['longitude'].replace('_', '.')
@@ -322,60 +322,34 @@ def create_app(config_name):
 
     @app.route("/api/v1/upgrade", methods=['GET'])
     def upgradeBandwidth():
+     total = 0
      today = datetime.date.today()
      first = today.replace(day=1)
      lastMonth = first - datetime.timedelta(days=1)
      lastMonth = lastMonth.replace(day=1)
-     last2Month = lastMonth - datetime.timedelta(days=1)
-     last2Month = last2Month.replace(day=1)
-     last3Month = last2Month - datetime.timedelta(days=1)
-     last3Month = last3Month.replace(day=1)
-     #daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
-     daysinMonth =  calendar.monthrange(last3Month.year, last3Month.month)[1]
-     #param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     param = '&sdate=' + last3Month.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + last2Month.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     url = 'http://122.248.39.155:5000/api/v1/status'
+     param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
+     url = 'localhost:5000/api/v1/status'
      response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
      for key in raw_data:
          try:
            traffic_id = key['trafficID']
-           ip = key['prtgsite']
-           url_volume = 'https://' + ip + '/api/historicdata.json?id='
+           url_volume = 'https://202.43.73.155/api/historicdata.json?id='
            url_traffic = url_volume + str(traffic_id) + param
-           #print(url_traffic)
            res = requests.get(url_traffic, verify=False)
-           #print(res.text)
+           print(res.text)
            data = json.loads(res.text)
            if data is not None:
-               total = 0
-               gb = 0
                for item in data['histdata']:
                  #print(item['Traffic Total (volume)'])
                  if item['Traffic Total (volume)'] == "":
                     item['Traffic Total (volume)'] = 0.0
                  total = total + float(item['Traffic Total (volume)'])
-               gb = (total / 1073741824) / daysinMonth
-               key['total_volume'] = gb
-               print("Rata-rata Traffic Bulan ini = {} GBytes". format(gb))
+               key['total_volume'] = total
+               print("Total Traffic Bulan ini = {}". format(total))
          except (KeyError, ValueError) as e:
-            key['total_volume'] = 0.0
             pass
      return jsonify(raw_data)
-
-    @app.route("/api/v1/listupgrade/<int:year>/<int:month>", methods=['GET'])
-    def listupgrade(year,month):
-        info = {}
-        content = []
-        collection = "tb_traffic_" + str(year) + "_" + str(month)
-        tb = db[collection]
-        for x in tb.find():
-            if x is not None:
-                data = json.loads(json_util.dumps(x))
-                info.update(data)
-                content.append(info)
-            info = {}
-        return jsonify(content)
 
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
@@ -398,7 +372,7 @@ def create_app(config_name):
       target = os.path.join(APP_ROOT, 'files/')
       content = []
       for i in range(32):
-        #print(i)
+        print(i)
         try:
           file = target + sensorid + '-' + str(year) + '-' + str(month) + '-' + str(i).zfill(2) + '.csv'
           csvfile = open(file, 'r')
