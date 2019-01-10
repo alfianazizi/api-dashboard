@@ -421,7 +421,7 @@ def create_app(config_name):
               info = {}
               snmp = 0
           except:
-              info.update({'bulan': i, 'sla': null})
+              info.update({'bulan': i, 'sla': None})
               content.append(info)
               info = {}
       print(content)

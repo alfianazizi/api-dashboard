@@ -38,7 +38,7 @@ for i in range(13):
         info = {}
         snmp = 0
     except:
-        info.update({'bulan': i, 'sla': null})
+        info.update({'bulan': i, 'sla': None})
         content.append(info)
         info = {}
 
