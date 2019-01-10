@@ -380,6 +380,20 @@ def create_app(config_name):
             info = {}
         return jsonify(content)
 
+    @app.route("/api/v1/getsla/<int:year>", methods=['GET'])
+    def getsla(year):
+        info = {}
+        content = []
+        collection = "tb_sla_7_" + str(year)
+        tb = db[collection]
+        for x in tb.find():
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                content.append(info)
+            info = {}
+        return jsonify(content)
+
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
       target = os.path.join(APP_ROOT, 'files/')
