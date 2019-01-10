@@ -450,7 +450,7 @@ def create_app(config_name):
       for i in range(32):
         #print(i)
         try:
-          file = target + sensorid + '-' + str(year) + '-' + str(month) + '-' + str(i).zfill(2) + '.csv'
+          file = target + sensorid + '-' + str(year) + '-' + str(month).zfill(2) + '-' + str(i).zfill(2) + '.csv'
           csvfile = open(file, 'r')
           reader = csv.DictReader(csvfile)
           for row in reader:
@@ -464,7 +464,7 @@ def create_app(config_name):
     def getSensorDetail(sensorid,year,month,day):
       content = []
       target = os.path.join(APP_ROOT, 'files/')
-      csvfile = open(target + sensorid + '-' + str(year) + '-' + str(month) + '-' + str(day) + '.csv', 'r')
+      csvfile = open(target + sensorid + '-' + str(year) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2) + '.csv', 'r')
       reader = csv.DictReader(csvfile)
       for row in reader:
          content.append(row)
