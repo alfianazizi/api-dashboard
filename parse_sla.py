@@ -24,15 +24,23 @@ for i in range(13):
         url_dashboard = url + params
         response = requests.post(url=url_dashboard)
         raw_data = json_util.loads(response.text)
-        average_sla = float(sum(d['snmp'] for d in raw_data) / len(raw_data))
+        snmp = 0
+        for d in raw_data:
+            if d['snmp_before'] != 0:
+                snmp = snmp + (d['snmp_before'] + d['snmp_after'])/2
+            else:
+                snmp = snmp + d['snmp']
+        average_sla = float(snmp/len(raw_data))
+        # average_sla = float(sum(d['snmp'] for d in raw_data) / len(raw_data))
         average_sla = round(average_sla,2)
         info.update({'bulan': i, 'sla': average_sla})
-        try:
-            x = col.insert_one(info)
-        except:
-            pass
+        # try:
+        #     x = col.insert_one(info)
+        # except:
+        #     pass
         content.append(info)
         info = {}
+        snmp = 0
     except:
         pass
 
