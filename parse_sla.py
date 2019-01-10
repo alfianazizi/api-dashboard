@@ -34,14 +34,16 @@ for i in range(13):
         # average_sla = float(sum(d['snmp'] for d in raw_data) / len(raw_data))
         average_sla = round(average_sla,2)
         info.update({'bulan': i, 'sla': average_sla})
-        try:
-            x = col.insert_one(info)
-        except:
-            pass
         content.append(info)
         info = {}
         snmp = 0
     except:
-        pass
+        info.update({'bulan': i, 'sla': null})
+        content.append(info)
+        info = {}
+try:
+    x = col.insert_many(content)
+except:
+    pass
 
 print(content)

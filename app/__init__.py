@@ -421,7 +421,9 @@ def create_app(config_name):
               info = {}
               snmp = 0
           except:
-              pass
+              info.update({'bulan': i, 'sla': null})
+              content.append(info)
+              info = {}
       print(content)
       return jsonify(content)
 
