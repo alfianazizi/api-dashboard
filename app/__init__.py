@@ -63,7 +63,6 @@ def create_app(config_name):
 
       return json_data
 
-
     @app.route("/api/v1/longuptime")
     def topUptime():
       global url_uptime1
@@ -393,6 +392,35 @@ def create_app(config_name):
                 content.append(info)
             info = {}
         return jsonify(content)
+
+    @app.route("/api/v1/getsla/<int:year>/<int:sensor>", methods=['GET'])
+    def getslalocation(year,sensor):
+      today = datetime.date.today()
+      first = today.replace(day=1)
+      lastMonth = first - datetime.timedelta(days=1)
+      lastMonth = lastMonth.replace(day=1)
+      url = "http://182.23.61.67/api/getdatabase/"
+      info = {}
+      content = []
+      for i in range(13):
+          try:
+              params = str(i) + '/' + year + '/old/sensor/'+ sensor +'/7'
+              url_dashboard = url + params
+              response = requests.post(url=url_dashboard)
+              raw_data = json_util.loads(response.text)
+              snmp = 0
+              if len(raw_data) > 1:
+                  average_sla = float(sum(d['sla'] for d in raw_data) / len(raw_data))
+              else:
+                  average_sla = raw_data[0]['sla']
+              average_sla = round(average_sla,2)
+              info.update({'bulan': i, 'sla': average_sla})
+              content.append(info)
+              info = {}
+              snmp = 0
+          except:
+              pass
+      return jsonify(content)
 
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
