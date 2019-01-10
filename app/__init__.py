@@ -403,10 +403,12 @@ def create_app(config_name):
       info = {}
       content = []
       for i in range(13):
+          print(i)
           try:
-              params = str(i) + '/' + year + '/old/sensor/'+ sensor +'/7'
+              params = str(i) + '/' + str(year) + '/old/sensor/'+ str(sensor) +'/7'
               url_dashboard = url + params
               response = requests.post(url=url_dashboard)
+              print('teset')
               raw_data = json_util.loads(response.text)
               snmp = 0
               if len(raw_data) > 1:
@@ -420,6 +422,7 @@ def create_app(config_name):
               snmp = 0
           except:
               pass
+      print(content)
       return jsonify(content)
 
     @app.route("/api/v1/upload", methods=['POST'])
