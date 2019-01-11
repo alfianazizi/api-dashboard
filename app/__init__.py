@@ -14,6 +14,7 @@ from flask_cors import CORS
 from operator import itemgetter
 from pymongo import MongoClient
 import urllib3
+import hashlib
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # local import
 from instance.config import app_config
@@ -469,5 +470,17 @@ def create_app(config_name):
       for row in reader:
          content.append(row)
       return jsonify(content)
+
+    @app.route("/api/v1/register/<username>/<password>", methods=['POST'])
+    def createUser(username,password):
+      users = db.users
+      existing_user = users.find_one(username)
+      if existing_user is not None:
+        m = hashlib.md5()
+        m.update(password.encode('utf-8'))
+        users.insert({'name' : username, 'password' : m.hexdigest()})
+        return 'Username' + username + 'successfully registered'
+      return 'That user already exist'
+
 
     return app
