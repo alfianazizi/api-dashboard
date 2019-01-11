@@ -482,4 +482,15 @@ def create_app(config_name):
       users.insert_one({'name' : username, 'password' : m.hexdigest()})
       return 'Username' + username + 'successfully registered'
 
+    @app.route("/api/v1/login", methods=['POST'])
+    def Login():
+      username = request.form['username']
+      password = request.form['password']
+      users = db.users
+      existing_user = users.find_one({'name' : username})
+      if existing_user:
+        if hashlib.md5(password.encode('utf-8')) == existing_user['password'].encode('utf-8'):
+          return 'Correct!'
+        return 'Username or password incorrect'
+      return 'Username or password incorrect'
     return app
