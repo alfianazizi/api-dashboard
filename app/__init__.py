@@ -402,7 +402,7 @@ def create_app(config_name):
       url = "http://182.23.61.67/api/getdatabase/"
       info = {}
       content = []
-      for i in range(13):
+      for i in range(1,13):
           print(i)
           try:
               params = str(i) + '/' + str(year) + '/old/sensor/'+ str(sensor) +'/7'
@@ -411,19 +411,22 @@ def create_app(config_name):
               print('teset')
               raw_data = json_util.loads(response.text)
               snmp = 0
-              if len(raw_data) > 1:
-                  average_sla = float(sum(d['sla'] for d in raw_data) / len(raw_data))
+              if raw_data[0]['snmpUptime'] is not None:
+                 if len(raw_data) > 1:
+                    average_sla = float(sum(d['sla'] for d in raw_data) / len(raw_data))
+                 else:
+                    average_sla = raw_data[0]['sla']
+                 average_sla = round(average_sla,2)
+                 info.update({'bulan': i, 'sla': average_sla})
+                 content.append(info)
+                 info = {}
+                 snmp = 0
               else:
-                  average_sla = raw_data[0]['sla']
-              average_sla = round(average_sla,2)
-              info.update({'bulan': i, 'sla': average_sla})
-              content.append(info)
-              info = {}
-              snmp = 0
+                 info.update({'bulan': i, 'sla': None})
+                 content.append(info)
+                 info = {}
           except:
-              info.update({'bulan': i, 'sla': None})
-              content.append(info)
-              info = {}
+             pass
       print(content)
       return jsonify(content)
 
