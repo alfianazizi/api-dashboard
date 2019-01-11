@@ -477,13 +477,9 @@ def create_app(config_name):
     @app.route("/api/v1/register/<username>/<password>", methods=['POST'])
     def createUser(username,password):
       users = db.users
-      existing_user = users.find_one(username)
-      if existing_user is not None:
-        m = hashlib.md5()
-        m.update(password.encode('utf-8'))
-        users.insert({'name' : username, 'password' : m.hexdigest()})
-        return 'Username' + username + 'successfully registered'
-      return 'That user already exist'
-
+      m = hashlib.md5()
+      m.update(password.encode('utf-8'))
+      users.insert_one({'name' : username, 'password' : m.hexdigest()})
+      return 'Username' + username + 'successfully registered'
 
     return app
