@@ -1,7 +1,8 @@
 # app/__init__.py
 
 from flask_api import FlaskAPI
-from bson import json_util, ObjectId
+from bson import json_util
+from bson.objectid import ObjectId
 import json
 import requests
 import calendar
@@ -28,18 +29,13 @@ now = datetime.datetime.now()
 last_month = now.month-1 if now.month > 1 else 12
 last_year = now.year - 1
 
-url_uptime1 = "https://202.43.73.155/api/table.json?content=sensors&columns=objid,device,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_uptime2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_ping1 = "https://202.43.73.155/api/table.json?content=sensors&id=2477&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_ping2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_traffic1 = "https://202.43.73.155/api/table.json?content=sensors&columns=objid,sensor,lastvalue,status&sortby=-lastvalue&filter_type=snmptraffic&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_traffic2 = "https://202.43.73.156/api/table.json?content=sensors&columns=objid,sensor,lastvalue,status&sortby=-lastvalue&filter_type=snmptraffic&username=prtguser&password=Bp3t1OK!&filter_status=3"
-url_downtimesince1 = "https://202.43.73.155/api/table.json?content=sensors&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
-url_downtimesince2 = "https://202.43.73.156/api/table.json?content=sensors&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
-url_all1 = "https://202.43.73.155/api/table.json?content=sensors&id=2477&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
-url_all2 = "https://202.43.73.156/api/table.json?content=sensors&id=2487&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
-url_dashboard = "http://182.23.61.67/api/getdatabase/" + str(last_month) + "/" + str(last_year) + "/old/7"
-#url_dashboard = "http://182.23.61.67/api/getdatabase/11/2018/old/7"
+prefix = "/api/table.json?content=sensors&id="
+url_uptime = "&columns=objid,device,sensor,lastvalue,status,message&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
+url_ping = "&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=3"
+url_traffic = "&columns=objid,sensor,lastvalue,status&sortby=-lastvalue&filter_type=snmptraffic&username=prtguser&password=Bp3t1OK!&filter_status=3"
+url_downtimesince = "&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
+url_all = "&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
+url_dashboard = "http://182.23.61.67/api/getdatabase/" + str(last_month) + "/" + str(last_year) + "/old/"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def create_app(config_name):
@@ -49,26 +45,44 @@ def create_app(config_name):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     CORS(app)
 
-    def getAPIData(url1, url2):
-      response1 = requests.get(url1, verify=False)
-      response2 = requests.get(url2, verify=False)
-      json_data1 = json.loads(response1.text)
-      json_data2 = json.loads(response2.text)
-      data = json_data1["sensors"] + json_data2["sensors"]
+    def getAPIData(url):
+      response = requests.get(url, verify=False)
+      json_data = json.loads(response.text)
+      data = json_data["sensors"]
 
       return data
 
-    def getAPIDashboard(x):
+    def filterAPI(objectID):
+       data = {}
+       users = db.users
+       exist = users.find_one({"_id": ObjectId(objectID)})
+       if exist is not None:
+          data = json.loads(json_util.dumps(exist))
+       return data
+
+    def getAPIDashboard(url, objectID):
+      data = filterAPI(objectID)
+      x = url + data['ispID']
       r = requests.post(url=x)
       json_data = json.loads(r.text)
 
       return json_data
 
-    @app.route("/api/v1/longuptime")
-    def topUptime():
-      global url_uptime1
-      global url_uptime2
-      uptime = getAPIData(url_uptime1, url_uptime2)
+    def getFilterData(url, objectID):
+        data = filterAPI(objectID)
+        if data['prtgsite_2'] is not None:
+            url_1 = "https://" + data['prtgsite_1'] + prefix + data['prtgsensorid_1'] + url
+            url_2 = "https://" + data['prtgsite_2'] + prefix + data['prtgsensorid_2'] + url
+            json_data = getAPIData(url_1) + getAPIData(url_2)
+        else:
+            url_1 = "https://" + data['prtgsite_1'] + prefix + data['prtgsensorid_1'] + url
+            json_data = getAPIData(url_1)
+        return json_data
+
+    @app.route("/api/v1/<objectID>/longuptime")
+    def topUptime(objectID):
+      global url_uptime
+      uptime = getFilterData(url_uptime, objectID)
       for x in uptime:
          if x['lastvalue_raw'] == "":
             x['lastvalue_raw'] = 0
@@ -77,11 +91,10 @@ def create_app(config_name):
 
       return jsonify(sorted_uptime[:10])
 
-    @app.route("/api/v1/shortuptime")
-    def topDowntime():
-      global url_uptime1
-      global url_uptime2
-      downtime = getAPIData(url_uptime1, url_uptime2)
+    @app.route("/api/v1/<objectID>/shortuptime")
+    def topDowntime(objectID):
+      global url_uptime
+      downtime = getFilterData(url_uptime, objectID)
       for x in downtime:
          if x['lastvalue_raw'] == "":
             x['lastvalue_raw'] = 0
@@ -90,30 +103,27 @@ def create_app(config_name):
 
       return jsonify(sorted_downtime[:10])
 
-    @app.route("/api/v1/fastestping")
-    def fastestPing():
-      global url_ping1
-      global url_ping2
-      ping = getAPIData(url_ping1, url_ping2)
+    @app.route("/api/v1/<objectID>/fastestping")
+    def fastestPing(objectID):
+      global url_ping
+      ping = getFilterData(url_ping, objectID)
       sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'))
       return jsonify(sorted_ping[:10])
 
-    @app.route("/api/v1/slowestping")
-    def slowestPing():
-      global url_ping1
-      global url_ping2
-      ping = getAPIData(url_ping1, url_ping2)
+    @app.route("/api/v1/<objectID>/slowestping")
+    def slowestPing(objectID):
+      global url_ping
+      ping = getFilterData(url_ping, objectID)
       sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'), reverse=True)
 
       return jsonify(sorted_ping[:10])
 
-    @app.route("/api/v1/status")
-    def statusSensor():
-      global url_all1
-      global url_all2
+    @app.route("/api/v1/<objectID>/status")
+    def statusSensor(objectID):
+      global url_all
       global url_dashboard
-      status_all = getAPIData(url_all1, url_all2)
-      status_dashboard = getAPIDashboard(url_dashboard)
+      status_all = getFilterData(url_all, objectID)
+      status_dashboard = getAPIDashboard(url_dashboard, objectID)
       info = {}
       content = []
       a = [{"id": str(d['objid']), "status": d['status']} for d in status_all if 'objid' and 'status' in d]
@@ -140,18 +150,17 @@ def create_app(config_name):
         item['prtgsite'] = item ['prtgsite'].replace('-', '.')
       return jsonify(content)
 
-    @app.route("/api/v1/topsla")
-    def topSLA():
+    @app.route("/api/v1/<objectID>/topsla")
+    def topSLA(objectID):
        global url_dashboard
-       status_dashboard = getAPIDashboard(url_dashboard)
+       status_dashboard = getAPIDashboard(url_dashboard, objectID)
        sorted_sla = sorted(status_dashboard, key=itemgetter('snmp'), reverse=True)
        return jsonify(sorted_sla[:10])
 
-    @app.route("/api/v1/topdowntime")
-    def longestDowntime():
-      global url_downtimesince1
-      global url_downtimesince2
-      ping = getAPIData(url_downtimesince1, url_downtimesince2)
+    @app.route("/api/v1/<objectID>/topdowntime")
+    def longestDowntime(objectID):
+      global url_downtimesince
+      ping = getFilterData(url_downtimesince, objectID)
       for x in ping:
          if x['downtimesince_raw'] == "":
             x['downtimesince_raw'] = 0
@@ -159,13 +168,12 @@ def create_app(config_name):
 
       return jsonify(sorted_ping[97:107])
 
-    @app.route("/api/v1/down")
-    def Down():
-      global url_downtimesince1
-      global url_downtimesince2
+    @app.route("/api/v1/<objectID>/down")
+    def Down(objectID):
+      global url_downtimesince
       global url_dashboard
-      loss = getAPIData(url_downtimesince1, url_downtimesince2)
-      loss_dashboard = getAPIDashboard(url_dashboard)
+      loss = getFilterData(url_downtimesince, objectID)
+      loss_dashboard = getAPIDashboard(url_dashboard, objectID)
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
@@ -202,13 +210,12 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content)
 
-    @app.route("/api/v1/toploss")
-    def topLoss():
-      global url_downtimesince1
-      global url_downtimesince2
+    @app.route("/api/v1/<objectID>/toploss")
+    def topLoss(objectID):
+      global url_downtimesince
       global url_dashboard
-      loss = getAPIData(url_downtimesince1, url_downtimesince2)
-      loss_dashboard = getAPIDashboard(url_dashboard)
+      loss = getFilterData(url_downtimesince, objectID)
+      loss_dashboard = getAPIDashboard(url_dashboard, objectID)
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
@@ -245,11 +252,10 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/highutil")
-    def highUtil():
-      global url_traffic1
-      global url_traffic2
-      status_all = getAPIData(url_traffic1, url_traffic2)
+    @app.route("/api/v1/<objectID>/highutil")
+    def highUtil(objectID):
+      global url_traffic
+      status_all = getFilterData(url_traffic, objectID)
       info = {}
       content = []
       a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
@@ -277,11 +283,10 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'), reverse=True)
       return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/lowutil")
-    def lowUtil():
-      global url_traffic1
-      global url_traffic2
-      status_all = getAPIData(url_traffic1, url_traffic2)
+    @app.route("/api/v1/<objectID>/lowutil")
+    def lowUtil(objectID):
+      global url_traffic
+      status_all = getFilterData(url_traffic, objectID)
       info = {}
       content = []
       a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
@@ -325,8 +330,8 @@ def create_app(config_name):
 
       return jsonify(data['limit'])
 
-    @app.route("/api/v1/upgrade", methods=['GET'])
-    def upgradeBandwidth():
+    @app.route("/api/v1/<objectID>/upgrade", methods=['GET'])
+    def upgradeBandwidth(objectID):
      today = datetime.date.today()
      first = today.replace(day=1)
      lastMonth = first - datetime.timedelta(days=1)
@@ -337,7 +342,7 @@ def create_app(config_name):
      #last3Month = last3Month.replace(day=1)
      daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
      param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     url = 'http://122.248.39.155:5000/api/v1/status'
+     url = 'http://122.248.39.155:5000/api/v1/' + objectID + 'status'
      response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
      for key in raw_data:
@@ -394,7 +399,7 @@ def create_app(config_name):
             info = {}
         return jsonify(content)
 
-    @app.route("/api/v1/getsla/<int:year>/<int:sensor>", methods=['GET'])
+    @app.route("/api/v1//getsla/<int:year>/<int:sensor>", methods=['GET'])
     def getslalocation(year,sensor):
       today = datetime.date.today()
       first = today.replace(day=1)
@@ -495,4 +500,5 @@ def create_app(config_name):
           return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
+
     return app
