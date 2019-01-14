@@ -399,7 +399,7 @@ def create_app(config_name):
             info = {}
         return jsonify(content)
 
-    @app.route("/api/v1//getsla/<int:year>/<int:sensor>", methods=['GET'])
+    @app.route("/api/v1/getsla/<int:year>/<int:sensor>", methods=['GET'])
     def getslalocation(year,sensor):
       today = datetime.date.today()
       first = today.replace(day=1)
