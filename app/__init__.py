@@ -22,7 +22,6 @@ from instance.config import app_config
 
 client = MongoClient()
 db=client.dashboard
-collection = db.master
 setting = db.settings
 
 now = datetime.datetime.now()
@@ -59,6 +58,11 @@ def create_app(config_name):
        if exist is not None:
           data = json.loads(json_util.dumps(exist))
        return data
+
+    def getCollection(objectID):
+      data = filterAPI(objectID)
+      collection = data['data']
+      return collection
 
     def getAPIDashboard(url, objectID):
       data = filterAPI(objectID)
@@ -124,6 +128,7 @@ def create_app(config_name):
       global url_dashboard
       status_all = getFilterData(url_all, objectID)
       status_dashboard = getAPIDashboard(url_dashboard, objectID)
+      collection = db[getCollection(objectID)]
       info = {}
       content = []
       a = [{"id": str(d['objid']), "status": d['status']} for d in status_all if 'objid' and 'status' in d]
@@ -143,11 +148,6 @@ def create_app(config_name):
           info.update({'status' : a[i]['status'], 'noID': i})
           content.append(info)
         info = {}
-      for item in content:
-        item['c_n'] = item['c_n'].replace('_', '.')
-        item['longitude'] = item ['longitude'].replace('_', '.')
-        item['latitude'] = item['latitude'].replace('_', '.')
-        item['prtgsite'] = item ['prtgsite'].replace('-', '.')
       return jsonify(content)
 
     @app.route("/api/v1/<objectID>/topsla")
@@ -177,6 +177,7 @@ def create_app(config_name):
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
+      collection = db[getCollection(objectID)]
       info = {}
       content = []
       a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
@@ -198,10 +199,6 @@ def create_app(config_name):
           content.append(info)
         info = {}
       for item in content:
-        item['c_n'] = item['c_n'].replace('_', '.')
-        item['longitude'] = item ['longitude'].replace('_', '.')
-        item['latitude'] = item['latitude'].replace('_', '.')
-        item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
@@ -219,6 +216,7 @@ def create_app(config_name):
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
+      collection = db[getCollection(objectID)]
       info = {}
       content = []
       a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
@@ -240,10 +238,6 @@ def create_app(config_name):
           content.append(info)
         info = {}
       for item in content:
-        item['c_n'] = item['c_n'].replace('_', '.')
-        item['longitude'] = item ['longitude'].replace('_', '.')
-        item['latitude'] = item['latitude'].replace('_', '.')
-        item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         if item['downtimesince_raw'] == "":
            item['downtimesince_raw'] = "0"
         x = float(item['downtimesince_raw'])
@@ -256,6 +250,7 @@ def create_app(config_name):
     def highUtil(objectID):
       global url_traffic
       status_all = getFilterData(url_traffic, objectID)
+      collection = db[getCollection(objectID)]
       info = {}
       content = []
       a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
@@ -269,11 +264,7 @@ def create_app(config_name):
         info = {}
       #print(content)
       for item in content:
-        item['c_n'] = item['c_n'].replace('_', '.')
-        item['longitude'] = item ['longitude'].replace('_', '.')
-        item['latitude'] = item['latitude'].replace('_', '.')
         item['harga'] = int(item['harga'])
-        item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         traffic_raw = float(item['traffic'].replace(' kbit/s',"").replace(',','.'))
         item['traffic_raw'] = traffic_raw
         capacitylink_raw = float(item['capacitylink'].replace(' Mbps',"")) * 1000
@@ -287,6 +278,7 @@ def create_app(config_name):
     def lowUtil(objectID):
       global url_traffic
       status_all = getFilterData(url_traffic, objectID)
+      collection = db[getCollection(objectID)]
       info = {}
       content = []
       a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
@@ -299,11 +291,7 @@ def create_app(config_name):
           content.append(info)
         info = {}
       for item in content:
-        item['c_n'] = item['c_n'].replace('_', '.')
-        item['longitude'] = item ['longitude'].replace('_', '.')
-        item['latitude'] = item['latitude'].replace('_', '.')
         item['harga'] = int(item['harga'])
-        item['prtgsite'] = item ['prtgsite'].replace('-', '.')
         traffic_raw = float(item['traffic'].replace(' kbit/s',"").replace(',','.'))
         item['traffic_raw'] = traffic_raw
         capacitylink_raw = float(item['capacitylink'].replace(' Mbps',"")) * 1000
@@ -457,7 +445,6 @@ def create_app(config_name):
       target = os.path.join(APP_ROOT, 'files/')
       content = []
       for i in range(32):
-        #print(i)
         try:
           file = target + sensorid + '-' + str(year) + '-' + str(month).zfill(2) + '-' + str(i).zfill(2) + '.csv'
           csvfile = open(file, 'r')
