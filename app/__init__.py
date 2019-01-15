@@ -4,6 +4,7 @@ from flask_api import FlaskAPI
 from bson import json_util
 from bson.objectid import ObjectId
 from pprint import pprint
+from io import BytesIO
 import json
 import requests
 import calendar
@@ -11,7 +12,7 @@ import datetime
 import os
 import csv
 from time import sleep, strftime, time
-from flask import jsonify, request
+from flask import jsonify, request, send_file
 from flask_cors import CORS
 from operator import itemgetter
 from pymongo import MongoClient
@@ -84,6 +85,12 @@ def create_app(config_name):
             url_1 = "https://" + data['prtgsite_1'] + prefix + data['prtgsensorid_1'] + url
             json_data = getAPIData(url_1)
         return json_data
+
+    def serve_image(img):
+       img_io = BytesIO()
+       img.save(img_io, 'PNG', quality=70)
+       img_io.seek(0)
+       return send_file(img_io, mimetype='images/png')
 
     @app.route("/api/v1/<objectID>/longuptime")
     def topUptime(objectID):
@@ -492,10 +499,11 @@ def create_app(config_name):
 
     @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
     def getImage(objectID, ip, sensorid):
-      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid "&username=prtguser&password=Bp3t1OK!"
-      img = Image.open(requests.get(url, stream = True).raw)
-      return img
-
+      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid + "&username=prtguser&password=Bp3t1OK!"
+      r = requests.get(url, stream = True, verify=False)
+      r.raw.decode_content = True
+      img = Image.open(r.raw)
+      return serve_image(img)
 
 
     return app
