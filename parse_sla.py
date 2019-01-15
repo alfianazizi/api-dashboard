@@ -17,7 +17,7 @@ col=db[filename]
 url = "http://182.23.61.67/api/getdatabase/"
 info = {}
 content = []
-for i in range(13):
+for i in range(1,13):
     print(i)
     try:
         params = str(i) + '/' + lastMonth.strftime('%Y') + '/old/7'
