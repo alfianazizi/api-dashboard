@@ -18,6 +18,7 @@ from pymongo import MongoClient
 import urllib3
 import hashlib
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from PIL import Image
 # local import
 from instance.config import app_config
 
@@ -331,7 +332,7 @@ def create_app(config_name):
      #last3Month = last3Month.replace(day=1)
      daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
      param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     url = 'http://122.248.39.155:5000/api/v1/' + objectID + 'status'
+     url = 'http://122.248.39.155:5000/api/v1/' + objectID + '/status'
      response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
      for key in raw_data:
@@ -488,5 +489,13 @@ def create_app(config_name):
           return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
+
+    @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
+    def getImage(objectID, ip, sensorid):
+      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid "&username=prtguser&password=Bp3t1OK!"
+      img = Image.open(requests.get(url, stream = True).raw)
+      return img
+
+
 
     return app
