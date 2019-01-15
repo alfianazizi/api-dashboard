@@ -3,6 +3,7 @@
 from flask_api import FlaskAPI
 from bson import json_util
 from bson.objectid import ObjectId
+from pprint import pprint
 import json
 import requests
 import calendar
@@ -17,6 +18,7 @@ from pymongo import MongoClient
 import urllib3
 import hashlib
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from PIL import Image
 # local import
 from instance.config import app_config
 
@@ -301,21 +303,21 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/setlimit", methods=['POST'])
-    def setLimit():
+    @app.route("/api/v1/<objectID>/setlimit", methods=['POST'])
+    def setLimit(objectID):
         limit = request.form['limit']
         print(limit)
+        data = filterAPI(objectID)
+        users = db.users
         if limit != "":
-          setting.update_one({'noID': 1},{ '$set': {'limit': limit}})
+          users.update_one({'isp': data['isp']},{ '$set': {'limit': limit}})
           return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
 
-    @app.route("/api/v1/getlimit", methods=['GET'])
-    def getLimit():
-      x = setting.find_one({'noID': 1})
-      data = json.loads(json_util.dumps(x))
-
+    @app.route("/api/v1/<objectID>/getlimit", methods=['GET'])
+    def getLimit(objectID):
+      data = filterAPI(objectID)
       return jsonify(data['limit'])
 
     @app.route("/api/v1/<objectID>/upgrade", methods=['GET'])
@@ -330,7 +332,7 @@ def create_app(config_name):
      #last3Month = last3Month.replace(day=1)
      daysinMonth =  calendar.monthrange(lastMonth.year, lastMonth.month)[1]
      param = '&sdate=' + lastMonth.strftime('%Y-%m-%d') + '-00-00-00' + '&edate=' + first.strftime('%Y-%m-%d') + '-00-00-00&avg=86400&usecaption=1&username=prtguser&password=Bp3t1OK!'
-     url = 'http://122.248.39.155:5000/api/v1/' + objectID + 'status'
+     url = 'http://122.248.39.155:5000/api/v1/' + objectID + '/status'
      response = requests.get(url, verify=False)
      raw_data = json.loads(response.text)
      for key in raw_data:
@@ -487,5 +489,13 @@ def create_app(config_name):
           return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
+
+    @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
+    def getImage(objectID, ip, sensorid):
+      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid "&username=prtguser&password=Bp3t1OK!"
+      img = Image.open(requests.get(url, stream = True).raw)
+      return img
+
+
 
     return app
