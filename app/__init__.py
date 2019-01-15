@@ -375,11 +375,12 @@ def create_app(config_name):
             info = {}
         return jsonify(content)
 
-    @app.route("/api/v1/getsla/<int:year>", methods=['GET'])
-    def getsla(year):
+    @app.route("/api/v1/<objectID>/getsla/<int:year>", methods=['GET'])
+    def getsla(objectID, year):
         info = {}
         content = []
-        collection = "tb_sla_7_" + str(year)
+        data = filterAPI(objectID)
+        collection = "tb_sla_" + data['ispID'] + "_" + str(year)
         tb = db[collection]
         for x in tb.find():
             if x is not None:
@@ -389,19 +390,20 @@ def create_app(config_name):
             info = {}
         return jsonify(content)
 
-    @app.route("/api/v1/getsla/<int:year>/<int:sensor>", methods=['GET'])
-    def getslalocation(year,sensor):
+    @app.route("/api/v1/<objectID>/getsla/<int:year>/<int:sensor>", methods=['GET'])
+    def getslalocation(objectID,year,sensor):
       today = datetime.date.today()
       first = today.replace(day=1)
       lastMonth = first - datetime.timedelta(days=1)
       lastMonth = lastMonth.replace(day=1)
+      data = filterAPI(objectID)
       url = "http://182.23.61.67/api/getdatabase/"
       info = {}
       content = []
       for i in range(1,13):
           print(i)
           try:
-              params = str(i) + '/' + str(year) + '/old/sensor/'+ str(sensor) +'/7'
+              params = str(i) + '/' + str(year) + '/old/sensor/'+ str(sensor) + '/' + data['ispID']
               url_dashboard = url + params
               response = requests.post(url=url_dashboard)
               print('teset')
@@ -492,7 +494,7 @@ def create_app(config_name):
 
     @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
     def getImage(objectID, ip, sensorid):
-      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid "&username=prtguser&password=Bp3t1OK!"
+      url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid + "&username=prtguser&password=Bp3t1OK!"
       img = Image.open(requests.get(url, stream = True).raw)
       return img
 

@@ -15,11 +15,11 @@ db=client.dashboard
 url = "http://182.23.61.67/api/getdatabase/"
 info = {}
 content = []
-for data in range(12):
+for data in range(1,12):
     filename = "tb_sla_" + str(data) + '_' + lastMonth.strftime('%Y')
     col = db[filename]
-    for i in range(13):
-        print(i)
+    for i in range(1,13):
+        # print(i+1)
         try:
             params = str(i) + '/' + lastMonth.strftime('%Y') + '/old/' + str(data)
             url_dashboard = url + params
@@ -32,19 +32,18 @@ for data in range(12):
                 else:
                     snmp = snmp + d['snmp']
             average_sla = float(snmp/len(raw_data))
-            # average_sla = float(sum(d['snmp'] for d in raw_data) / len(raw_data))
             average_sla = round(average_sla,2)
-            info.update({'bulan': i, 'sla': average_sla})
+            info.update({'isp': data, 'bulan': i, 'sla': average_sla})
             content.append(info)
             info = {}
             snmp = 0
         except:
-            info.update({'bulan': i, 'sla': None})
+            info.update({'isp': data, 'bulan': i, 'sla': None})
             content.append(info)
             info = {}
+    print(content)
     try:
         x = col.insert_many(content)
     except:
         pass
-
-print(content)
+    content = []
