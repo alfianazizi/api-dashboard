@@ -3,6 +3,7 @@
 from flask_api import FlaskAPI
 from bson import json_util
 from bson.objectid import ObjectId
+from pprint import pprint
 import json
 import requests
 import calendar
@@ -301,21 +302,21 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/setlimit", methods=['POST'])
-    def setLimit():
+    @app.route("/api/v1/<objectID>/setlimit", methods=['POST'])
+    def setLimit(objectID):
         limit = request.form['limit']
         print(limit)
+        data = filterAPI(objectID)
+        users = db.users
         if limit != "":
-          setting.update_one({'noID': 1},{ '$set': {'limit': limit}})
+          users.update_one({'isp': data['isp']},{ '$set': {'limit': limit}})
           return jsonify({'ok': True, 'message': 'Limit Updated'}), 200
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
 
-    @app.route("/api/v1/getlimit", methods=['GET'])
-    def getLimit():
-      x = setting.find_one({'noID': 1})
-      data = json.loads(json_util.dumps(x))
-
+    @app.route("/api/v1/<objectID>/getlimit", methods=['GET'])
+    def getLimit(objectID):
+      data = filterAPI(objectID)
       return jsonify(data['limit'])
 
     @app.route("/api/v1/<objectID>/upgrade", methods=['GET'])
