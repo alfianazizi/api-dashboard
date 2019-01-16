@@ -175,7 +175,7 @@ def create_app(config_name):
             x['downtimesince_raw'] = 0
       sorted_ping = sorted(ping, key=itemgetter('downtimesince_raw'), reverse=True)
 
-      return jsonify(sorted_ping[97:107])
+      return jsonify(sorted_ping[23:33])
 
     @app.route("/api/v1/<objectID>/down")
     def Down(objectID):
