@@ -19,6 +19,10 @@ for data in range(1,12):
     filename = "tb_sla_" + str(data) + '_' + lastMonth.strftime('%Y')
     col = db[filename]
     for i in range(1,13):
+<<<<<<< HEAD
+=======
+        # print(i+1)
+>>>>>>> 0790302af823fcf60e985db4b23c31e1ec587e76
         try:
             params = str(i) + '/' + lastMonth.strftime('%Y') + '/old/' + str(data)
             url_dashboard = url + params
