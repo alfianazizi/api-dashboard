@@ -201,9 +201,19 @@ def create_app(config_name):
       global url_dashboard
       loss = getFilterData(url_downtimesince, objectID)
       loss_dashboard = getAPIDashboard(url_dashboard, objectID)
+      hari = datetime.date.today()
+      first = hari.replace(day=1)
+      lastMonth = first - datetime.timedelta(days=1)
+      hariBulanKemarin = calendar.monthrange(lastMonth.year, lastMonth.month)[1]
+      jumlahDetikBlnKemarin = hariBulanKemarin * 86400
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
+      today = now.day * 86400
+      jumlah = today + jumlahDetikBlnKemarin - 600
+      print(hariBulanKemarin)
+      print(now.day)
+      print(jumlah)
       collection = db[getCollection(objectID)]
       info = {}
       content = []
@@ -227,9 +237,18 @@ def create_app(config_name):
         info = {}
       for item in content:
         if item['downtimesince_raw'] == "":
-           item['downtimesince_raw'] = "0"
+          item['downtimesince_raw'] = 0
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
+        if x > 0 and x < float(jumlah):
+          if x > float(today):
+            print('masuk')
+            loss_kemarin = x - float(today)
+            print(loss_kemarin)
+            item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
+          else:
+            item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
+        else:
+          item['loss'] = 0
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content)
