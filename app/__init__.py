@@ -243,6 +243,7 @@ def create_app(config_name):
       now = datetime.datetime.now()
       daysofMonth = calendar.monthrange(now.year, now.month)[1]
       secondInMonth = daysofMonth * 86400
+      today = now.day * 86400
       collection = db[getCollection(objectID)]
       info = {}
       content = []
@@ -266,9 +267,17 @@ def create_app(config_name):
         info = {}
       for item in content:
         if item['downtimesince_raw'] == "":
-           item['downtimesince_raw'] = "0"
+          item['downtimesince_raw'] = 0
+        if item['downtimesince_raw'] != 0:
+          inMonth = float(item['downtimesince_raw']) - today
+        else:
+          inMonth = 0
         x = float(item['downtimesince_raw'])
-        item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
+
+        if x < inMonth:
+          item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
+        else:
+          item['loss'] = 0
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content[:10])
