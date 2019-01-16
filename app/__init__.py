@@ -268,21 +268,17 @@ def create_app(config_name):
       for item in content:
         if item['downtimesince_raw'] == "":
           item['downtimesince_raw'] = 0
-
-      for item in content:
-        if item['downtimesince_raw'] != 0:
-          inMonth = float(item['downtimesince_raw']) - float(today)
-        else:
-          inMonth = 0
+        print(float(today))
         x = float(item['downtimesince_raw'])
 
-        if x < inMonth:
+        if x >= 0 and x <= float(today):
+          print('test')
           item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
         else:
           item['loss'] = 0
 
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
-      return jsonify(sorted_content)
+      return jsonify(sorted_content[:10])
 
     @app.route("/api/v1/<objectID>/highutil")
     def highUtil(objectID):
