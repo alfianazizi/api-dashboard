@@ -173,6 +173,7 @@ def create_app(config_name):
       loss_ping = getAPIDashboard(url_dashboard, objectID)
       info = {}
       content = []
+      collection = db[getCollection(objectID)]
       a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
       for d in ping if 'objid' and 'downtimesince_raw' and 'status' in d]
       b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
