@@ -174,31 +174,26 @@ def create_app(config_name):
       info = {}
       content = []
       collection = db[getCollection(objectID)]
-      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
-      for d in ping if 'objid' and 'downtimesince_raw' and 'status' in d]
-      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
-      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
-      "new_harga": d['new_harga'], } for d in loss_ping if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
-      'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
+      a = [{"id": str(d['objid']), "downtimesince": d['downtimesince'], "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
+      for d in ping if 'objid' and 'downtimesince' and 'downtimesince_raw' and 'status' in d]
+      b = [{"id": str(d['sensorPing'])} for d in loss_ping if 'sensorPing' in d]
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
           for indx in b:
              if (indx['id'] == data['pingID']):
-                data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan': {'tagihan': indx['tagihan'], \
-                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
-          info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
+          info.update({'downtimesince' : a[i]['downtimesince'], 'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
         info = {}
       for item in content:
         if item['downtimesince_raw'] == "":
-           item['downtimesince_raw'] = "0"
+           item['downtimesince_raw'] = 0
 
       sorted_ping = sorted(content, key=itemgetter('downtimesince_raw'), reverse=True)
 
-      return jsonify(sorted_ping)
+      return jsonify(sorted_ping[:10])
 
     @app.route("/api/v1/<objectID>/down")
     def Down(objectID):
