@@ -250,6 +250,9 @@ def create_app(config_name):
       secondInMonth = daysofMonth * 86400
       today = now.day * 86400
       jumlah = today + jumlahDetikBlnKemarin - 600
+      print(hariBulanKemarin)
+      print(now.day)
+      print(jumlah)
       collection = db[getCollection(objectID)]
       info = {}
       content = []
@@ -277,8 +280,12 @@ def create_app(config_name):
         x = float(item['downtimesince_raw'])
         if x > 0 and x < float(jumlah):
           if x > float(today):
+            print('masuk')
             loss_kemarin = x - float(today)
+            print(loss_kemarin)
             item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
+          else:
+            item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
         else:
           item['loss'] = 0
 
