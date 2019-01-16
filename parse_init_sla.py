@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from bson import json_util
 import datetime
 import json
+from pprint import pprint
 
 today = datetime.date.today()
 first = today.replace(day=1)
@@ -41,9 +42,10 @@ for data in range(1,12):
             info.update({'isp': data, 'bulan': i, 'sla': None})
             content.append(info)
             info = {}
-    print(content)
-    # try:
-    #     x = col.insert_many(content)
-    # except:
-    #     pass
+        array = []
+    pprint(content)
+    try:
+        x = col.insert_many(content)
+    except:
+        pass
     content = []
