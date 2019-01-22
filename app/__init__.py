@@ -18,8 +18,12 @@ from operator import itemgetter
 from pymongo import MongoClient
 import urllib3
 import hashlib
+import xmltodict
+from xml.etree import ElementTree
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from PIL import Image
+from flask_mail import Mail, Message
+
 # local import
 from instance.config import app_config
 from flask_mail import Mail, Message
@@ -426,7 +430,7 @@ def create_app(config_name):
                gb = (total / 1073741824) / daysinMonth
                key['total_volume'] = gb
                print("Rata-rata Traffic Bulan ini = {} GBytes". format(gb))
-         except (KeyError, ValueError) as e:
+         except (KeyError, ValueError):
             key['total_volume'] = 0.0
             pass
      return jsonify(raw_data)
@@ -488,7 +492,6 @@ def create_app(config_name):
                  info.update({'bulan': i, 'sla': average_sla})
                  content.append(info)
                  info = {}
-                 snmp = 0
               else:
                  info.update({'bulan': i, 'sla': None})
                  content.append(info)
@@ -570,7 +573,6 @@ def create_app(config_name):
       img = Image.open(r.raw)
       return serve_image(img)
 
-
     @app.route("/api/v1/send")
     def sendMail():
        msg = Message("Hello", sender="apollo@kirei.com", recipients=["lepib@next2cloud.info"])
@@ -578,4 +580,25 @@ def create_app(config_name):
        mail.send(msg)
        return "Sent"
 
+    @app.route("/api/v1/<objectID>/getsummary/<int:month>/<int:year>")
+    def getSummary(objectID, month, year):
+        info = {}
+        content = []
+        data_isp = filterAPI(objectID)
+        filename = "tb_sla_sensor_{}_{}_{}".format(str(month).zfill(2), str(year), str(data_isp['ispID']))
+        print(filename)
+        collection = db[filename]
+        url = 'http://localhost:5000/api/v1/{}/status'.format(objectID)
+        response = requests.get(url, verify=False)
+        raw_data = json.loads(response.text)
+        for key in raw_data:
+            x = collection.find_one({"sensorID": key['sensorID']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                info.update({'lokasi': key['lokasi']})
+                content.append(info)
+            print(info)
+            info = {}
+        return jsonify(content)
     return app
