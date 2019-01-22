@@ -22,6 +22,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from PIL import Image
 # local import
 from instance.config import app_config
+from flask_mail import Mail, Message
+
 
 client = MongoClient()
 db=client.dashboard
@@ -45,7 +47,12 @@ def create_app(config_name):
     app.config.from_object(app_config[config_name])
     app.config.from_pyfile('config.py')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['MAIL_SERVER']='localhost'
+    app.config['MAIL_PORT'] = 25
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_USE_TLS'] = False
     CORS(app)
+    mail = Mail(app)
 
     def getAPIData(url):
       response = requests.get(url, verify=False)
@@ -562,5 +569,13 @@ def create_app(config_name):
       r.raw.decode_content = True
       img = Image.open(r.raw)
       return serve_image(img)
+
+
+    @app.route("/api/v1/send")
+    def sendMail():
+       msg = Message("Hello", sender="apollo@kirei.com", recipients=["lepib@next2cloud.info"])
+       msg.body = "This is testing email bith"
+       mail.send(msg)
+       return "Sent"
 
     return app
