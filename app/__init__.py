@@ -555,7 +555,7 @@ def create_app(config_name):
       login_pass = hashlib.md5(password.encode('utf-8'))
       if existing_user:
         if login_pass.hexdigest() == existing_user['password']:
-          return str(existing_user['_id'])
+          return {"id": str(existing_user['_id']), 'email': existing_user['email']}
         return 'Username or password incorrect'
       return 'Username or password incorrect'
 
@@ -567,32 +567,38 @@ def create_app(config_name):
       img = Image.open(r.raw)
       return serve_image(img)
 
-    @app.route("/api/v1/send")
-    def sendMail():
-        msg = Message('Testing', sender='apollo@kirei.com', recipients=["alfianazizi4869@gmail.com"])
-        msg.body = 'testing 123'
+    @app.route("/api/v1/<objectID>/changeemail", methods=['POST'])
+    def changeEmail(objectID):
+        email = request.form['email']
+        print(email)
+        data = filterAPI(objectID)
+        users = db.users
+        if email != "":
+            users.update_one({'isp': data['isp']}, {'$set': {'email': email}})
+            return jsonify({'ok': True, 'message': 'Email Updated'}), 200
+        else:
+            return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
+    @app.route("/api/v1/<objectID>/send", methods=['POST'])
+    def sendMail(objectID):
+        subject = request.form['subject']
+        body = request.form['body']
+        data = filterAPI(objectID)
+        user_email = data['email']
+        msg = Message(subject, sender='apollo@kirei.co.id', recipients=[user_email])
+        msg.body = body
         mail.send(msg)
-        return 'sent!  '
+        return 'Message Sent!'
 
     @app.route("/api/v1/<objectID>/getsummary/<int:month>/<int:year>")
     def getSummary(objectID, month, year):
-        info = {}
-        content = []
         data_isp = filterAPI(objectID)
-        filename = "tb_sla_sensor_{}_{}_{}".format(str(month).zfill(2), str(year), str(data_isp['ispID']))
+        filename = "tb_sla_sensor_{}_{}_{}".format(str(month), str(year), str(data_isp['ispID']))
         print(filename)
         collection = db[filename]
-        url = 'http://localhost:5000/api/v1/{}/status'.format(objectID)
-        response = requests.get(url, verify=False)
-        raw_data = json.loads(response.text)
-        for key in raw_data:
-            x = collection.find_one({"sensorID": key['sensorID']})
-            if x is not None:
-                data = json.loads(json_util.dumps(x))
-                info.update(data)
-                info.update({'lokasi': key['lokasi']})
-                content.append(info)
-            print(info)
-            info = {}
-        return jsonify(content)
+        x = collection.find()
+        l = list(x)
+        data = json.loads(json_util.dumps(l))
+        pprint(data)
+        return jsonify(data)
     return app
