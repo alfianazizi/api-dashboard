@@ -222,9 +222,9 @@ def create_app(config_name):
       secondInMonth = daysofMonth * 86400
       today = now.day * 86400
       jumlah = today + jumlahDetikBlnKemarin - 600
-      print(hariBulanKemarin)
-      print(now.day)
-      print(jumlah)
+      #print(hariBulanKemarin)
+      #print(now.day)
+      #print(jumlah)
       collection = db[getCollection(objectID)]
       info = {}
       content = []
@@ -252,9 +252,9 @@ def create_app(config_name):
         x = float(item['downtimesince_raw'])
         if x > 0 and x < float(jumlah):
           if x > float(today):
-            print('masuk')
+            #print('masuk')
             loss_kemarin = x - float(today)
-            print(loss_kemarin)
+            #print(loss_kemarin)
             item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
           else:
             item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
@@ -280,9 +280,9 @@ def create_app(config_name):
       secondInMonth = daysofMonth * 86400
       today = now.day * 86400
       jumlah = today + jumlahDetikBlnKemarin - 600
-      print(hariBulanKemarin)
-      print(now.day)
-      print(jumlah)
+      #print(hariBulanKemarin)
+      #print(now.day)
+      #print(jumlah)
       collection = db[getCollection(objectID)]
       info = {}
       content = []
@@ -310,9 +310,9 @@ def create_app(config_name):
         x = float(item['downtimesince_raw'])
         if x > 0 and x < float(jumlah):
           if x > float(today):
-            print('masuk')
+            #print('masuk')
             loss_kemarin = x - float(today)
-            print(loss_kemarin)
+            #print(loss_kemarin)
             item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
           else:
             item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
@@ -380,7 +380,7 @@ def create_app(config_name):
     @app.route("/api/v1/<objectID>/setlimit", methods=['POST'])
     def setLimit(objectID):
         limit = request.form['limit']
-        print(limit)
+        #print(limit)
         data = filterAPI(objectID)
         users = db.users
         if limit != "":
@@ -429,7 +429,7 @@ def create_app(config_name):
                  total = total + float(item['Traffic Total (volume)'])
                gb = (total / 1073741824) / daysinMonth
                key['total_volume'] = gb
-               print("Rata-rata Traffic Bulan ini = {} GBytes". format(gb))
+               #print("Rata-rata Traffic Bulan ini = {} GBytes". format(gb))
          except (KeyError, ValueError):
             key['total_volume'] = 0.0
             pass
@@ -475,12 +475,12 @@ def create_app(config_name):
       info = {}
       content = []
       for i in range(1,13):
-          print(i)
+          #print(i)
           try:
               params = str(i) + '/' + str(year) + '/old/sensor/'+ str(sensor) + '/' + data['ispID']
               url_dashboard = url + params
               response = requests.post(url=url_dashboard)
-              print('teset')
+              #print('teset')
               raw_data = json_util.loads(response.text)
               snmp = 0
               if raw_data[0]['snmpUptime'] is not None:
@@ -498,22 +498,22 @@ def create_app(config_name):
                  info = {}
           except:
              pass
-      print(content)
+      #print(content)
       return jsonify(content)
 
     @app.route("/api/v1/upload", methods=['POST'])
     def upload():
       target = os.path.join(APP_ROOT, 'files/')
-      print(target)
+      #print(target)
 
       if not os.path.isdir(target):
         os.mkdir(target)
 
       for file in request.files.getlist("file"):
-        print(file)
+        #print(file)
         filename = file.filename
         destination = "/".join([target, filename])
-        print(destination)
+        #print(destination)
         file.save(destination)
       return jsonify({'ok': True})
 
@@ -529,7 +529,7 @@ def create_app(config_name):
           for row in reader:
             content.append(row)
         except IOError:
-          print("Could not read file:", file)
+          #print("Could not read file:", file)
           pass
       return jsonify(content)
 
@@ -555,12 +555,13 @@ def create_app(config_name):
     def Login():
       username = request.form['username']
       password = request.form['password']
-      print(username)
+      #print(username)
       users = db.users
       existing_user = users.find_one({'username' : username})
       login_pass = hashlib.md5(password.encode('utf-8'))
       if existing_user:
         if login_pass.hexdigest() == existing_user['password']:
+          #return {"id": str(existing_user['_id']), 'email': existing_user['email']}
           return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
@@ -573,32 +574,36 @@ def create_app(config_name):
       img = Image.open(r.raw)
       return serve_image(img)
 
-    @app.route("/api/v1/send")
-    def sendMail():
-       msg = Message("Hello", sender="apollo@kirei.com", recipients=["lepib@next2cloud.info"])
-       msg.body = "This is testing email bith"
-       mail.send(msg)
-       return "Sent"
+    @app.route("/api/v1/<objectID>/changeemail", methods=['POST'])
+    def changeEmail(objectID):
+        email = request.form['email']
+        #print(email)
+        data = filterAPI(objectID)
+        users = db.users
+        if email != "":
+            users.update_one({'isp': data['isp']}, {'$set': {'email': email}})
+            return jsonify({'ok': True, 'message': 'Email Updated'}), 200
+        else:
+            return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
+    @app.route("/api/v1/<objectID>/send", methods=['POST'])
+    def sendMail(objectID):
+        subject = request.form['subject']
+        body = request.form['body']
+        data = filterAPI(objectID)
+        user_email = data['email']
+        msg = Message(subject, sender='apollo@kirei.co.id', recipients=[user_email])
+        msg.body = body
+        mail.send(msg)
+        return 'Message Sent!'
 
     @app.route("/api/v1/<objectID>/getsummary/<int:month>/<int:year>")
     def getSummary(objectID, month, year):
-        info = {}
-        content = []
         data_isp = filterAPI(objectID)
-        filename = "tb_sla_sensor_{}_{}_{}".format(str(month).zfill(2), str(year), str(data_isp['ispID']))
-        print(filename)
+        filename = "tb_sla_sensor_{}_{}_{}".format(str(month), str(year), str(data_isp['ispID']))
         collection = db[filename]
-        url = 'http://localhost:5000/api/v1/{}/status'.format(objectID)
-        response = requests.get(url, verify=False)
-        raw_data = json.loads(response.text)
-        for key in raw_data:
-            x = collection.find_one({"sensorID": key['sensorID']})
-            if x is not None:
-                data = json.loads(json_util.dumps(x))
-                info.update(data)
-                info.update({'lokasi': key['lokasi']})
-                content.append(info)
-            print(info)
-            info = {}
-        return jsonify(content)
+        x = collection.find()
+        l = list(x)
+        data = json.loads(json_util.dumps(l))
+        return jsonify(data)
     return app
