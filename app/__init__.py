@@ -389,6 +389,23 @@ def create_app(config_name):
         else:
           return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
 
+    @app.route("/api/v1/<objectID>/settimeemail", methods=['POST'])
+    def setEmailTime(objectID):
+        tipe = request.form['tipe']
+        value = request.form['value']
+        data = filterAPI(objectID)
+        users = db.users
+        if value != "":
+            users.update_one({'isp': data['isp']}, {'$set': {'tipe': tipe, 'value': value}})
+            return jsonify({'ok': True, 'message': 'Email Time Updated'}), 200
+        else:
+            return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
+    @app.route("/api/v1/<objectID>/gettimeemail", methods=['GET'])
+    def getEmailTime(objectID):
+        data = filterAPI(objectID)
+        return jsonify({'tipe': data['tipe'], 'value': data['value']})
+
     @app.route("/api/v1/<objectID>/getlimit", methods=['GET'])
     def getLimit(objectID):
       data = filterAPI(objectID)
@@ -557,7 +574,7 @@ def create_app(config_name):
       password = request.form['password']
       #print(username)
       users = db.users
-      existing_user = users.find_one({'username' : username})
+      existing_user = users.find_one({'username': username})
       login_pass = hashlib.md5(password.encode('utf-8'))
       if existing_user:
         if login_pass.hexdigest() == existing_user['password']:
@@ -565,6 +582,23 @@ def create_app(config_name):
           return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
+
+    @app.route("/api/v1/<objectID>/changepassword", methods=['POST'])
+    def changePassword(objectID):
+        password = request.form['password']
+        new_password = request.form['new_password']
+        data = filterAPI(objectID)
+        users = db.users
+        new_password_hash = hashlib.md5(new_password.encode('utf-8')).hexdigest()
+        password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
+        existing_user = users.find_one({'password': password_hash})
+        if existing_user:
+            if password_hash == data['password']:
+                users.update_one({'isp': data['isp']}, {'$set': {'password': new_password_hash}})
+                return jsonify({'ok': True, 'message': 'Password Updated'}), 200
+            return jsonify({'ok': False, 'message': 'Password Invalid'}), 400
+        else:
+            return jsonify({'ok': False, 'message': 'Password Invalid'}), 400
 
     @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
     def getImage(objectID, ip, sensorid):
@@ -606,4 +640,28 @@ def create_app(config_name):
         l = list(x)
         data = json.loads(json_util.dumps(l))
         return jsonify(data)
+
+    @app.route("/api/v1/<objectID>/losslevel")
+    def getLossLevel(objectID):
+        url = "http://localhost:5000/api/v1/{}/down".format(objectID)
+        response = requests.get(url)
+        raw_data = json_util.loads(response.text)
+        info = {}
+        content_1 = []
+        content_2 = []
+        content_3 = []
+        for key in raw_data:
+            info.update({'lokasi': key['lokasi'], 'provinsi':key['provinsi'], 'kabkot':key['kabkot'], 'sensorID':key['sensorID'], 'loss': key['loss']})
+            if key['loss'] > 50000000:
+                content_1.append(info)
+            elif 10000000 <= key['loss'] <= 50000000:
+                content_2.append(info)
+            elif 0 < key['loss'] < 10000000:
+                content_3.append(info)
+            info = {}
+        data = {'total_level_1': len(content_1), 'total_level_2': len(content_2), 'total_level_3': len(content_3),
+                'details':{'level1': content_1, 'level2': content_2, 'level3': content_3}}
+        pprint(data)
+        return jsonify(data)
+
     return app
