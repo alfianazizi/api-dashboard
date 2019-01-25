@@ -400,6 +400,23 @@ def create_app(config_name):
         data = filterAPI(objectID)
         return jsonify({'tipe': data['tipe'], 'value': data['value']})
 
+    @app.route("/api/v1/<objectID>/setemail", methods=['POST'])
+    def setEmail(objectID):
+        subject = request.form['subject']
+        body = request.form['body']
+        data = filterAPI(objectID)
+        users = db.users
+        if body is not None:
+            users.update_one({'isp': data['isp']}, {'$set': {'subject': subject, 'body': body}})
+            return jsonify({'ok': True, 'message': 'Email Body and Subject Updated'}), 200
+        else:
+            return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
+
+    @app.route("/api/v1/<objectID>/getemail")
+    def getEmail(objectID):
+        data = filterAPI(objectID)
+        return jsonify({'subject': data['subject'], 'body': data['body']})
+
     @app.route("/api/v1/<objectID>/getlimit", methods=['GET'])
     def getLimit(objectID):
       data = filterAPI(objectID)
@@ -426,15 +443,13 @@ def create_app(config_name):
            ip = key['prtgsite']
            url_volume = 'https://' + ip + '/api/historicdata.json?id='
            url_traffic = url_volume + str(traffic_id) + param
-           #print(url_traffic)
            res = requests.get(url_traffic, verify=False)
-           #print(res.text)
            data = json.loads(res.text)
            if data is not None:
                total = 0
                gb = 0
                for item in data['histdata']:
-                 #print(item['Traffic Total (volume)'])
+                     #print(item['Traffic Total (volume)'])
                  if item['Traffic Total (volume)'] == "":
                     item['Traffic Total (volume)'] = 0.0
                  total = total + float(item['Traffic Total (volume)'])
