@@ -642,7 +642,7 @@ def create_app(config_name):
         data = filterAPI(objectID)
         user_email = data['email']
         msg = Message(subject, sender='apollo@kirei.co.id', recipients=[user_email])
-        msg.body = body
+        msg.html = body
         mail.send(msg)
         return 'Message Sent!'
 
