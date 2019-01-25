@@ -578,8 +578,8 @@ def create_app(config_name):
       login_pass = hashlib.md5(password.encode('utf-8'))
       if existing_user:
         if login_pass.hexdigest() == existing_user['password']:
-          #return {"id": str(existing_user['_id']), 'email': existing_user['email']}
-          return str(existing_user['_id'])
+          return {"id": str(existing_user['_id']), 'email': existing_user['email']}
+          #return str(existing_user['_id'])
         return 'Username or password incorrect'
       return 'Username or password incorrect'
 
@@ -661,7 +661,7 @@ def create_app(config_name):
             info = {}
         data = {'total_level_1': len(content_1), 'total_level_2': len(content_2), 'total_level_3': len(content_3),
                 'details':{'level1': content_1, 'level2': content_2, 'level3': content_3}}
-        pprint(data)
+        #pprint(data)
         return jsonify(data)
 
     return app
