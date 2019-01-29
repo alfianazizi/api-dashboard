@@ -91,50 +91,84 @@ def create_app(config_name):
             json_data = getAPIData(url_1)
         return json_data
 
+    def getXMLfromAPI(url):
+        res = requests.get(url, verify=False)
+        res_tree = ElementTree.fromstring(res.content)
+        tree = ElementTree.tostring(res_tree, encoding='utf8').decode('utf8')
+        data = json.dumps(xmltodict.parse(tree))
+        data = json.loads(data)
+        return data
+
     def serve_image(img):
        img_io = BytesIO()
        img.save(img_io, 'PNG', quality=70)
        img_io.seek(0)
        return send_file(img_io, mimetype='images/png')
 
-    @app.route("/api/v1/<objectID>/longuptime")
-    def topUptime(objectID):
-      global url_uptime
-      uptime = getFilterData(url_uptime, objectID)
-      for x in uptime:
-         if x['lastvalue_raw'] == "":
-            x['lastvalue_raw'] = 0
-         x['lastvalue'] = x['lastvalue'].replace(' ', '')
-      sorted_uptime = sorted(uptime, key=itemgetter('lastvalue_raw'), reverse=True)
+    @app.route("/api/v1/<objectID>/top10/<cluster>/uptime/<type>")
+    def topTenUptime(objectID, cluster, type):
+        global url_uptime
+        uptime = getFilterData(url_uptime, objectID)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        for key in uptime:
+            x = collection.find_one({'sensorID': key['objid']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                if cluster != 'total':
+                    if data['cluster'] == cluster:
+                        info.update(data)
+                        if key['lastvalue_raw'] == "":
+                            key['lastvalue_raw'] = 0
+                        key['lastvalue'] = key['lastvalue'].replace(' ', '')
+                        info.update({'lastvalue_raw': key['lastvalue_raw'], 'lastvalue': key['lastvalue']})
+                        content.append(info)
+                        info = {}
+                elif cluster == 'total':
+                    info.update(data)
+                    if key['lastvalue_raw'] == "":
+                        key['lastvalue_raw'] = 0
+                    key['lastvalue'] = key['lastvalue'].replace(' ', '')
+                    info.update({'lastvalue_raw': key['lastvalue_raw'], 'lastvalue': key['lastvalue']})
+                    content.append(info)
+                    info = {}
+        if type == 'long':
+            sorted_uptime = sorted(content, key=itemgetter('lastvalue_raw'), reverse=True)
+        elif type == 'short':
+            sorted_uptime = sorted(content, key=itemgetter('lastvalue_raw'))
+        else:
+            return "Not Valid"
+        return jsonify(sorted_uptime[:10])
 
-      return jsonify(sorted_uptime[:10])
-
-    @app.route("/api/v1/<objectID>/shortuptime")
-    def topDowntime(objectID):
-      global url_uptime
-      downtime = getFilterData(url_uptime, objectID)
-      for x in downtime:
-         if x['lastvalue_raw'] == "":
-            x['lastvalue_raw'] = 0
-         x['lastvalue'] = x['lastvalue'].replace(' ', '')
-      sorted_downtime = sorted(downtime, key=itemgetter('lastvalue_raw'))
-
-      return jsonify(sorted_downtime[:10])
-
-    @app.route("/api/v1/<objectID>/fastestping")
-    def fastestPing(objectID):
-      global url_ping
-      ping = getFilterData(url_ping, objectID)
-      sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'))
-      return jsonify(sorted_ping[:10])
-
-    @app.route("/api/v1/<objectID>/slowestping")
-    def slowestPing(objectID):
-      global url_ping
-      ping = getFilterData(url_ping, objectID)
-      sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'), reverse=True)
-
-      return jsonify(sorted_ping[:10])
+    @app.route("/api/v1/<objectID>/top10/<cluster>/ping/<type>")
+    def topTenPing(objectID, cluster, type):
+        global url_ping
+        ping = getFilterData(url_ping, objectID)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        for key in ping:
+            x = collection.find_one({'pingID': key['objid']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                if cluster != 'total':
+                    if data['cluster'] == cluster:
+                        info.update(data)
+                        info.update({'lastvalue_raw': key['lastvalue_raw']})
+                        content.append(info)
+                elif cluster == 'total':
+                    info.update(data)
+                    info.update({'lastvalue_raw': key['lastvalue_raw']})
+                    content.append(info)
+            info = {}
+        if type == 'fast':
+            sorted_ping = sorted(content, key=itemgetter('lastvalue_raw'))
+        elif type == 'slow':
+            sorted_ping = sorted(content, key=itemgetter('lastvalue_raw'), reverse=True)
+        else:
+            return "Not Valid"
+        return jsonify(sorted_ping[:10])
 
     @app.route("/api/v1/<objectID>/status")
     def statusSensor(objectID):
@@ -164,33 +198,57 @@ def create_app(config_name):
         info = {}
       return jsonify(content)
 
-    @app.route("/api/v1/<objectID>/topsla")
-    def topSLA(objectID):
+    @app.route("/api/v1/<objectID>/top10/<cluster>/sla")
+    def topTenSLA(objectID, cluster):
        global url_dashboard
        status_dashboard = getAPIDashboard(url_dashboard, objectID)
-       sorted_sla = sorted(status_dashboard, key=itemgetter('snmp'), reverse=True)
+       info = {}
+       content = []
+       collection = db[getCollection(objectID)]
+       for key in status_dashboard:
+           x = collection.find_one({'sensorID': key['sensorID_new']})
+           if x is not None:
+               data = json.loads(json_util.dumps(x))
+               if cluster != 'total':
+                   if data['cluster'] == cluster:
+                       info.update(data)
+                       info.update({'snmp': key['snmp']})
+                       content.append(info)
+               elif cluster == 'total':
+                   info.update(data)
+                   info.update({'snmp': key['snmp']})
+                   content.append(info)
+           info = {}
+       sorted_sla = sorted(content, key=itemgetter('snmp'), reverse=True)
        return jsonify(sorted_sla[:10])
 
-    @app.route("/api/v1/<objectID>/topdowntime")
-    def longestDowntime(objectID):
+    @app.route("/api/v1/<objectID>/top10/<cluster>/downtime")
+    def topTenLongDowntime(objectID, cluster):
       global url_downtimesince
       ping = getFilterData(url_downtimesince, objectID)
       loss_ping = getAPIDashboard(url_dashboard, objectID)
       info = {}
       content = []
       collection = db[getCollection(objectID)]
-      a = [{"id": str(d['objid']), "downtimesince": d['downtimesince'], "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
-      for d in ping if 'objid' and 'downtimesince' and 'downtimesince_raw' and 'status' in d]
-      b = [{"id": str(d['sensorPing'])} for d in loss_ping if 'sensorPing' in d]
-      for i in range(len(a)):
-        x = collection.find_one({"pingID": a[i]['id']})
+      for key in ping:
+        x = collection.find_one({"pingID": key['objid']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
-          for indx in b:
-             if (indx['id'] == data['pingID']):
-                info.update(data)
-          info.update({'downtimesince' : a[i]['downtimesince'], 'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
-          content.append(info)
+          for dash in loss_ping:
+             if (dash['sensorPing'] == data['pingID']):
+                 if cluster != 'total':
+                     if data['cluster'] == cluster:
+                         info.update(data)
+                         info.update(
+                             {'downtimesince': key['downtimesince'], 'downtimesince_raw': key['downtimesince_raw']}
+                         )
+                         content.append(info)
+                 elif cluster == 'total':
+                     info.update(data)
+                     info.update(
+                         {'downtimesince': key['downtimesince'], 'downtimesince_raw': key['downtimesince_raw']}
+                     )
+                     content.append(info)
         info = {}
       for item in content:
         if item['downtimesince_raw'] == "":
@@ -199,6 +257,7 @@ def create_app(config_name):
       sorted_ping = sorted(content, key=itemgetter('downtimesince_raw'), reverse=True)
 
       return jsonify(sorted_ping[:10])
+
 
     @app.route("/api/v1/<objectID>/down")
     def Down(objectID):
@@ -258,117 +317,108 @@ def create_app(config_name):
       sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
       return jsonify(sorted_content)
 
-    @app.route("/api/v1/<objectID>/toploss")
-    def topLoss(objectID):
-      global url_downtimesince
-      global url_dashboard
-      loss = getFilterData(url_downtimesince, objectID)
-      loss_dashboard = getAPIDashboard(url_dashboard, objectID)
-      hari = datetime.date.today()
-      first = hari.replace(day=1)
-      lastMonth = first - datetime.timedelta(days=1)
-      hariBulanKemarin = calendar.monthrange(lastMonth.year, lastMonth.month)[1]
-      jumlahDetikBlnKemarin = hariBulanKemarin * 86400
-      now = datetime.datetime.now()
-      daysofMonth = calendar.monthrange(now.year, now.month)[1]
-      secondInMonth = daysofMonth * 86400
-      today = now.day * 86400
-      jumlah = today + jumlahDetikBlnKemarin - 600
-      print(hariBulanKemarin)
-      print(now.day)
-      print(jumlah)
-      collection = db[getCollection(objectID)]
-      info = {}
-      content = []
-      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
-      for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
-      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
-      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
-      "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
-      'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
-      for i in range(len(a)):
-        x = collection.find_one({"pingID": a[i]['id']})
-        if x is not None:
-          data = json.loads(json_util.dumps(x))
-          for indx in b:
-             if (indx['id'] == data['pingID']):
-                data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan': {'tagihan': indx['tagihan'], \
-                  'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
-                info.update(data)
-          info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
-          content.append(info)
+    @app.route("/api/v1/<objectID>/top10/<cluster>/loss")
+    def topTenLoss(objectID, cluster):
+        global url_downtimesince
+        global url_dashboard
+        loss = getFilterData(url_downtimesince, objectID)
+        loss_dashboard = getAPIDashboard(url_dashboard, objectID)
+        hari = datetime.date.today()
+        first = hari.replace(day=1)
+        lastMonth = first - datetime.timedelta(days=1)
+        hariBulanKemarin = calendar.monthrange(lastMonth.year, lastMonth.month)[1]
+        jumlahDetikBlnKemarin = hariBulanKemarin * 86400
+        now = datetime.datetime.now()
+        daysofMonth = calendar.monthrange(now.year, now.month)[1]
+        secondInMonth = daysofMonth * 86400
+        today = now.day * 86400
+        jumlah = today + jumlahDetikBlnKemarin - 600
+        collection = db[getCollection(objectID)]
         info = {}
-      for item in content:
-        if item['downtimesince_raw'] == "":
-          item['downtimesince_raw'] = 0
-        x = float(item['downtimesince_raw'])
-        if x > 0 and x < float(jumlah):
-          if x > float(today):
-            print('masuk')
-            loss_kemarin = x - float(today)
-            print(loss_kemarin)
-            item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
-          else:
-            item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
-        else:
-          item['loss'] = 0
+        content = []
+        for key in loss:
+            x = collection.find_one({"pingID": key['objid']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                for dash in loss_dashboard:
+                    if (dash['sensorPing'] == data['pingID']):
+                        if cluster != 'total':
+                            if data['cluster'] == cluster:
+                                data.update(
+                                    {'sla': {'sla': dash['snmp'], 'old_sla': dash['snmp_before'],
+                                             'new_sla': dash['snmp_after']},
+                                     'tagihan': {'tagihan': dash['tagihan'],
+                                                 'old_tagihan': dash['tagihan_before'],
+                                                 'new_tagihan': dash['tagihan_after']},
+                                     'harga': {'harga': dash['harga'], 'old_harga': dash['old_harga'],
+                                               'new_harga': dash['new_harga']}})
+                                info.update(data)
+                                info.update({'downtimesince_raw': key['downtimesince_raw']})
+                                content.append(info)
+                        elif cluster == 'total':
+                            data.update(
+                                {'sla': {'sla': dash['snmp'], 'old_sla': dash['snmp_before'], 'new_sla': dash['snmp_after']},
+                                 'tagihan': {'tagihan': dash['tagihan'],
+                                             'old_tagihan': dash['tagihan_before'], 'new_tagihan': dash['tagihan_after']},
+                                 'harga': {'harga': dash['harga'], 'old_harga': dash['old_harga'],
+                                           'new_harga': dash['new_harga']}})
+                            info.update(data)
+                            info.update({'downtimesince_raw': key['downtimesince_raw']})
+                            content.append(info)
+            info = {}
+        for item in content:
+            if item['downtimesince_raw'] == "":
+                item['downtimesince_raw'] = 0
+            x = float(item['downtimesince_raw'])
+            if 0 < x < float(jumlah):
+                if x > float(today):
+                    loss_kemarin = x - float(today)
+                    item['loss'] = (loss_kemarin / float(jumlahDetikBlnKemarin) + (x - loss_kemarin) / float(
+                        secondInMonth)) * item['harga']['harga']
+                else:
+                    item['loss'] = (x / float(secondInMonth)) * item['harga']['harga']
+            else:
+                item['loss'] = 0
 
-      sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
-      return jsonify(sorted_content[:10])
+        sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
+        return jsonify(sorted_content[:10])
 
-    @app.route("/api/v1/<objectID>/highutil")
-    def highUtil(objectID):
+    @app.route("/api/v1/<objectID>/top10/<cluster>/util/<type>")
+    def topTenUtil(objectID, cluster, type):
       global url_traffic
       status_all = getFilterData(url_traffic, objectID)
       collection = db[getCollection(objectID)]
       info = {}
       content = []
-      a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
-      for i in range(len(a)):
-        x = collection.find_one({"trafficID": a[i]['id']})
+      for key in status_all:
+        x = collection.find_one({"trafficID": key['objid']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
-          info.update(data)
-          info.update({'traffic' : a[i]['traffic']})
-          content.append(info)
+          if cluster != 'total':
+              if data['cluster'] == cluster:
+                  info.update(data)
+                  info.update({'traffic': key['lastvalue']})
+                  content.append(info)
+          elif cluster == 'total':
+              info.update(data)
+              info.update({'traffic': key['lastvalue']})
+              content.append(info)
         info = {}
-      #print(content)
       for item in content:
         item['harga'] = int(item['harga'])
-        traffic_raw = float(item['traffic'].replace(' kbit/s',"").replace(',','.'))
+        traffic_raw = float(item['traffic'].replace(' kbit/s', "").replace(',', '.'))
         item['traffic_raw'] = traffic_raw
-        capacitylink_raw = float(item['capacitylink'].replace(' Mbps',"")) * 1000
+        capacitylink_raw = float(item['capacitylink'].replace(' Mbps', "")) * 1000
         item['capacitylink_raw'] = capacitylink_raw
         utility = (traffic_raw/capacitylink_raw) * 100
         item['utility'] = utility
-      sorted_content = sorted(content, key=itemgetter('utility'), reverse=True)
-      return jsonify(sorted_content[:10])
+      if type == 'low':
+          sorted_content = sorted(content, key=itemgetter('utility'))
+      elif type == 'high':
+          sorted_content = sorted(content, key=itemgetter('utility'), reverse=True)
+      else:
+          return "Not Valid"
 
-    @app.route("/api/v1/<objectID>/lowutil")
-    def lowUtil(objectID):
-      global url_traffic
-      status_all = getFilterData(url_traffic, objectID)
-      collection = db[getCollection(objectID)]
-      info = {}
-      content = []
-      a = [{"id": str(d['objid']), "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
-      for i in range(len(a)):
-        x = collection.find_one({"trafficID": a[i]['id']})
-        if x is not None:
-          data = json.loads(json_util.dumps(x))
-          info.update(data)
-          info.update({'traffic' : a[i]['traffic']})
-          content.append(info)
-        info = {}
-      for item in content:
-        item['harga'] = int(item['harga'])
-        traffic_raw = float(item['traffic'].replace(' kbit/s',"").replace(',','.'))
-        item['traffic_raw'] = traffic_raw
-        capacitylink_raw = float(item['capacitylink'].replace(' Mbps',"")) * 1000
-        item['capacitylink_raw'] = capacitylink_raw
-        utility = (traffic_raw/capacitylink_raw) * 100
-        item['utility'] = utility
-      sorted_content = sorted(content, key=itemgetter('utility'))
       return jsonify(sorted_content[:10])
 
     @app.route("/api/v1/<objectID>/setlimit", methods=['POST'])
@@ -611,7 +661,7 @@ def create_app(config_name):
     @app.route("/api/v1/<objectID>/getimage/<ip>/<sensorid>")
     def getImage(objectID, ip, sensorid):
       url = "https://" + ip + "/chart.png?type=graph&width=1200&height=500&graphid=2&id=" + sensorid + "&username=prtguser&password=Bp3t1OK!"
-      r = requests.get(url, stream = True, verify=False)
+      r = requests.get(url, stream=True, verify=False)
       r.raw.decode_content = True
       img = Image.open(r.raw)
       return serve_image(img)
@@ -673,5 +723,251 @@ def create_app(config_name):
                 'details':{'level1': content_1, 'level2': content_2, 'level3': content_3}}
         pprint(data)
         return jsonify(data)
+
+    @app.route("/api/v1/<objectID>/table/<startdate>/<enddate>")
+    def getTable(objectID, startdate, enddate):
+        content = []
+        url = 'http://localhost:5000/api/v1/{}/status'.format(objectID)
+        response = requests.get(url, verify=False)
+        raw_data = json.loads(response.text)
+        for key in raw_data:
+            info = {}
+            sensorID = key['sensorID']
+            trafficID = key['trafficID']
+            pingID = key['pingID']
+            lokasi = key['lokasi']
+            ip = key['prtgsite']
+            param = '&sdate={}-00-00-00&edate={}-00-00-00&avg=0&username=prtguser&password=Bp3t1OK!'.format(startdate, enddate)
+            url_uptime = 'https://{}/api/historicdata_totals.xml?id={}{}'.format(ip, str(sensorID), param)
+            url_ping = 'https://{}/api/historicdata_totals.xml?id={}{}'.format(ip, str(pingID), param)
+            url_traffic = 'https://{}/api/historicdata_totals.xml?id={}{}'.format(ip, str(trafficID), param)
+            print(url_uptime)
+            print(url_ping)
+            print(url_traffic)
+            data_uptime = getXMLfromAPI(url_uptime)
+            data_ping = getXMLfromAPI(url_ping)
+            data_traffic = getXMLfromAPI(url_traffic)
+            pprint(data_uptime)
+            pprint(data_ping)
+            pprint(data_traffic)
+            ping_up = "{} {}".format(str(data_ping['historicdata']['uptimepercent']), str(data_ping['historicdata']['uptime']))
+            ping_down = "{} {}".format(str(data_ping['historicdata']['downtimepercent']), str(data_ping['historicdata']['downtime']))
+            try:
+                ping_avg = "{} msec".format(str(float(float(data_ping['historicdata']['average']) / 10)))
+            except:
+                ping_avg = 'No Data'
+                pass
+            uptime_up = "{} {}".format(str(data_uptime['historicdata']['uptimepercent']), str(data_uptime['historicdata']['uptime']))
+            uptime_down = "{} {}".format(str(data_uptime['historicdata']['downtimepercent']), str(data_uptime['historicdata']['downtime']))
+            try:
+                uptime_avg = str(float(data_uptime['historicdata']['average']))
+            except:
+                uptime_avg = 'No Data'
+                pass
+            traffic_up = "{} {}".format(str(data_traffic['historicdata']['uptimepercent']), str(data_traffic['historicdata']['uptime']))
+            traffic_down = "{} {}".format(str(data_traffic['historicdata']['downtimepercent']), str(data_traffic['historicdata']['downtime']))
+            try:
+                traffic_avg = "{} kbits/s".format(str(float(float(data_traffic['historicdata']['average']) * 8 / 1024)))
+                traffic_total = "{} KBytes".format(str(float(float(data_traffic['historicdata']['sum']) / 8192)))
+            except:
+                traffic_avg = 'No Data'
+                traffic_total = 'No Data'
+                pass
+            info.update({'lokasi': lokasi, 'ping_up': ping_up, 'ping_down': ping_down, 'ping_avg': ping_avg,
+                         'traffic_up': traffic_up, 'traffic_down': traffic_down, 'traffic_avg': traffic_avg,
+                         'traffic_total': traffic_total, 'uptime_up': uptime_up, 'uptime_down': uptime_down,
+                         'uptime_avg': uptime_avg})
+            print(info)
+            content.append(info)
+        return jsonify(content)
+    # --------------------------------- old code api top ten --------------------------------- #
+    @app.route("/api/v1/<objectID>/shortuptime")
+    def topDowntime(objectID):
+        global url_uptime
+        downtime = getFilterData(url_uptime, objectID)
+        for x in downtime:
+            if x['lastvalue_raw'] == "":
+                x['lastvalue_raw'] = 0
+            x['lastvalue'] = x['lastvalue'].replace(' ', '')
+        sorted_downtime = sorted(downtime, key=itemgetter('lastvalue_raw'))
+
+        return jsonify(sorted_downtime[:10])
+
+    @app.route("/api/v1/<objectID>/fastestping")
+    def fastestPing(objectID):
+        global url_ping
+        ping = getFilterData(url_ping, objectID)
+        sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'))
+        return jsonify(sorted_ping[:10])
+
+    @app.route("/api/v1/<objectID>/slowestping")
+    def slowestPing(objectID):
+        global url_ping
+        ping = getFilterData(url_ping, objectID)
+        sorted_ping = sorted(ping, key=itemgetter('lastvalue_raw'), reverse=True)
+
+
+        return jsonify(sorted_ping[:10])
+
+    @app.route("/api/v1/<objectID>/topsla")
+    def topSLA(objectID):
+        global url_dashboard
+        status_dashboard = getAPIDashboard(url_dashboard, objectID)
+        sorted_sla = sorted(status_dashboard, key=itemgetter('snmp'), reverse=True)
+        return jsonify(sorted_sla[:10])
+
+    @app.route("/api/v1/<objectID>/topdowntime")
+    def longestDowntime(objectID):
+        global url_downtimesince
+        ping = getFilterData(url_downtimesince, objectID)
+        loss_ping = getAPIDashboard(url_dashboard, objectID)
+        info = {}
+        content = []
+        collection = db[getCollection(objectID)]
+        a = [{"id": d['objid'], "downtimesince": d['downtimesince'], "downtimesince_raw": d['downtimesince_raw'],
+              "status": d['status']} \
+             for d in ping if 'objid' and 'downtimesince' and 'downtimesince_raw' and 'status' in d]
+        b = [{"id": d['sensorPing']} for d in loss_ping if 'sensorPing' in d]
+        print(a)
+        for i in range(len(a)):
+            x = collection.find_one({"pingID": a[i]['id']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                for indx in b:
+                    if (indx['id'] == data['pingID']):
+                        info.update(data)
+                info.update(
+                    {'downtimesince': a[i]['downtimesince'], 'downtimesince_raw': a[i]['downtimesince_raw'], 'noID': i})
+                content.append(info)
+            info = {}
+        for item in content:
+            if item['downtimesince_raw'] == "":
+                item['downtimesince_raw'] = 0
+
+        sorted_ping = sorted(content, key=itemgetter('downtimesince_raw'), reverse=True)
+
+        return jsonify(sorted_ping[:10])
+
+    @app.route("/api/v1/<objectID>/toploss")
+    def topLoss(objectID):
+        global url_downtimesince
+        global url_dashboard
+        loss = getFilterData(url_downtimesince, objectID)
+        loss_dashboard = getAPIDashboard(url_dashboard, objectID)
+        hari = datetime.date.today()
+        first = hari.replace(day=1)
+        lastMonth = first - datetime.timedelta(days=1)
+        hariBulanKemarin = calendar.monthrange(lastMonth.year, lastMonth.month)[1]
+        jumlahDetikBlnKemarin = hariBulanKemarin * 86400
+        now = datetime.datetime.now()
+        daysofMonth = calendar.monthrange(now.year, now.month)[1]
+        secondInMonth = daysofMonth * 86400
+        today = now.day * 86400
+        jumlah = today + jumlahDetikBlnKemarin - 600
+        # print(hariBulanKemarin)
+        # print(now.day)
+        # print(jumlah)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        a = [{"id": d['objid'], "downtimesince_raw": d['downtimesince_raw'], "status": d['status']}
+             for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
+        b = [{"id": d['sensorPing'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'],
+              "tagihan_old": d['tagihan_before'],
+              "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'],
+              "old_harga": d['old_harga'],
+              "new_harga": d['new_harga'], } for d in loss_dashboard if
+             'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
+             'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
+        for i in range(len(a)):
+            x = collection.find_one({"pingID": a[i]['id']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                for indx in b:
+                    if (indx['id'] == data['pingID']):
+                        data.update(
+                            {'sla': {'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']},
+                             'tagihan': {'tagihan': indx['tagihan'],
+                                         'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']},
+                             'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'],
+                                       'new_harga': indx['new_harga']}})
+                        info.update(data)
+                info.update({'downtimesince_raw': a[i]['downtimesince_raw'], 'noID': i})
+                content.append(info)
+            info = {}
+        for item in content:
+            if item['downtimesince_raw'] == "":
+                item['downtimesince_raw'] = 0
+            x = float(item['downtimesince_raw'])
+            if x > 0 and x < float(jumlah):
+                if x > float(today):
+                    # print('masuk')
+                    loss_kemarin = x - float(today)
+                    # print(loss_kemarin)
+                    item['loss'] = (loss_kemarin / float(jumlahDetikBlnKemarin) + (x - loss_kemarin) / float(
+                        secondInMonth)) * item['harga']['harga']
+                else:
+                    item['loss'] = (x / float(secondInMonth)) * item['harga']['harga']
+            else:
+                item['loss'] = 0
+
+        sorted_content = sorted(content, key=itemgetter('loss'), reverse=True)
+        return jsonify(sorted_content[:10])
+
+    @app.route("/api/v1/<objectID>/highutil")
+    def highUtil(objectID):
+        global url_traffic
+        status_all = getFilterData(url_traffic, objectID)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        a = [{"id": d['objid'], "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
+        for i in range(len(a)):
+            x = collection.find_one({"trafficID": a[i]['id']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                info.update({'traffic': a[i]['traffic']})
+                content.append(info)
+            info = {}
+        # print(content)
+        for item in content:
+            item['harga'] = int(item['harga'])
+            traffic_raw = float(item['traffic'].replace(' kbit/s', "").replace(',', '.'))
+            item['traffic_raw'] = traffic_raw
+            capacitylink_raw = float(item['capacitylink'].replace(' Mbps', "")) * 1000
+            item['capacitylink_raw'] = capacitylink_raw
+            utility = (traffic_raw / capacitylink_raw) * 100
+            item['utility'] = utility
+        sorted_content = sorted(content, key=itemgetter('utility'), reverse=True)
+        return jsonify(sorted_content[:10])
+
+    @app.route("/api/v1/<objectID>/lowutil")
+    def lowUtil(objectID):
+        global url_traffic
+        status_all = getFilterData(url_traffic, objectID)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        a = [{"id": d['objid'], "traffic": d['lastvalue']} for d in status_all if 'objid' and 'lastvalue' in d]
+        for i in range(len(a)):
+            x = collection.find_one({"trafficID": a[i]['id']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                info.update({'traffic': a[i]['traffic']})
+                content.append(info)
+            info = {}
+        for item in content:
+            item['harga'] = int(item['harga'])
+            traffic_raw = float(item['traffic'].replace(' kbit/s', "").replace(',', '.'))
+            item['traffic_raw'] = traffic_raw
+            capacitylink_raw = float(item['capacitylink'].replace(' Mbps', "")) * 1000
+            item['capacitylink_raw'] = capacitylink_raw
+            utility = (traffic_raw / capacitylink_raw) * 100
+            item['utility'] = utility
+        sorted_content = sorted(content, key=itemgetter('utility'))
+        return jsonify(sorted_content[:10])
+    # ---------------------------------------------------------------------------------------- #
 
     return app
