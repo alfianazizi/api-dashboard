@@ -31,6 +31,7 @@ for i in range(6, 13):
     for key in raw_data:
         try:
             sensorID = key['sensorID']
+            lokasi = key['lokasi']
             ip = key['prtgsite']
             if i < 12:
                 param = '&sdate=2018-{}-01-00-00-00&edate=2018-{}-01-00-00-00&avg=0&username=prtguser&password=Bp3t1OK!'.format(str(i).zfill(2), str(i+1).zfill(2))
@@ -47,7 +48,6 @@ for i in range(6, 13):
             data = json.loads(data)
             res1 = requests.post(url=url_dashboard)
             dash = json_util.loads(res1.text)
-            pprint(dash)
             sla_prtg = 0
             if dash[0]['snmpUptime'] is not None:
                 average_sla = dash[0]['snmpUptime']
@@ -61,7 +61,7 @@ for i in range(6, 13):
             if data is not None:
                 sla_prtg = data['historicdata']['uptimepercent'].replace(",", ".")
                 sla_prtg = float(sla_prtg.split(" %")[0])
-            info.update({"sensorID": sensorID, "sla_itb": average_sla, "sla_prtg": sla_prtg, "bulan": i})
+            info.update({"sensorID": sensorID, "lokasi": lokasi, "sla_itb": average_sla, "sla_prtg": sla_prtg, "bulan": i})
             print(info)
             content.append(info)
             info = {}
