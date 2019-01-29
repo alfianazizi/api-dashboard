@@ -287,11 +287,11 @@ def create_app(config_name):
       collection = db[getCollection(objectID)]
       info = {}
       content = []
-      a = [{"id": str(d['objid']), "downtimesince_raw": d['downtimesince_raw'], "status": d['status']} \
+      a = [{"id": d['objid'], "downtimesince_raw": d['downtimesince_raw'], "status": d['status']}
       for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
-      b = [{"id": str(d['sensorPing']), "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'], \
-      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'], \
-      "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and \
+      b = [{"id": d['sensorPing'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'],
+      "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'],
+      "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
@@ -311,9 +311,7 @@ def create_app(config_name):
         x = float(item['downtimesince_raw'])
         if x > 0 and x < float(jumlah):
           if x > float(today):
-            #print('masuk')
             loss_kemarin = x - float(today)
-            #print(loss_kemarin)
             item['loss'] = (loss_kemarin/float(jumlahDetikBlnKemarin) + (x - loss_kemarin)/float(secondInMonth)) * item['harga']['harga']
           else:
             item['loss'] = (x/float(secondInMonth)) * item['harga']['harga']
@@ -786,6 +784,17 @@ def create_app(config_name):
             content.append(info)
         return jsonify(content)
     # --------------------------------- old code api top ten --------------------------------- #
+    @app.route("/api/v1/<objectID>/longuptime")
+    def topUptime(objectID):
+        global url_uptime
+        uptime = getFilterData(url_uptime, objectID)
+        for x in uptime:
+            if x['lastvalue_raw'] == "":
+                x['lastvalue_raw'] = 0
+            x['lastvalue'] = x['lastvalue'].replace(' ', '')
+        sorted_uptime = sorted(uptime, key=itemgetter('lastvalue_raw'), reverse=True)
+        return jsonify(sorted_uptime[:10])
+
     @app.route("/api/v1/<objectID>/shortuptime")
     def topDowntime(objectID):
         global url_uptime
