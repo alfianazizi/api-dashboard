@@ -786,6 +786,18 @@ def create_app(config_name):
             content.append(info)
         return jsonify(content)
     # --------------------------------- old code api top ten --------------------------------- #
+    @app.route("/api/v1/<objectID>/longuptime")
+    def topUptime(objectID):
+      global url_uptime
+      uptime = getFilterData(url_uptime, objectID)
+      for x in uptime:
+         if x['lastvalue_raw'] == "":
+            x['lastvalue_raw'] = 0
+         x['lastvalue'] = x['lastvalue'].replace(' ', '')
+      sorted_uptime = sorted(uptime, key=itemgetter('lastvalue_raw'), reverse=True)
+
+      return jsonify(sorted_uptime[:10])
+
     @app.route("/api/v1/<objectID>/shortuptime")
     def topDowntime(objectID):
         global url_uptime
