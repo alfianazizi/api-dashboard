@@ -42,7 +42,7 @@ url_uptime = "&columns=objid,device,sensor,lastvalue,status,message&sortby=-last
 url_ping = "&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_traffic = "&columns=objid,sensor,lastvalue,status&sortby=-lastvalue&filter_type=snmptraffic&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_downtimesince = "&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=ping&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
-url_all = "&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&filter_type=snmpcustom&username=prtguser&password=Bp3t1OK!"
+url_all = "&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=ping&username=prtguser&password=Bp3t1OK!"
 url_dashboard = "http://182.23.61.67/api/getdatabase/" + str(last_month) + "/" + str(last_year) + "/old/"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -191,7 +191,7 @@ def create_app(config_name):
       "new_harga": d['new_harga'], } for d in status_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
       for i in range(len(a)):
-        x = collection.find_one({"sensorID": a[i]['id']})
+        x = collection.find_one({"pingID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
           for indx in b:
@@ -704,6 +704,9 @@ def create_app(config_name):
 
     @app.route("/api/v1/<objectID>/losslevel")
     def getLossLevel(objectID):
+        data = filterAPI(objectID)
+        limit = int(data['limit'])
+        print(limit)
         url = "http://localhost:5000/api/v1/{}/down".format(objectID)
         response = requests.get(url)
         raw_data = json_util.loads(response.text)
@@ -712,13 +715,15 @@ def create_app(config_name):
         content_2 = []
         content_3 = []
         for key in raw_data:
-            info.update({'lokasi': key['lokasi'], 'provinsi':key['provinsi'], 'kabkot':key['kabkot'], 'sensorID':key['sensorID'], 'loss': key['loss']})
-            if key['loss'] > 50000000:
-                content_1.append(info)
-            elif 10000000 <= key['loss'] <= 50000000:
-                content_2.append(info)
-            elif 0 < key['loss'] < 10000000:
-                content_3.append(info)
+            if key['downtimesince_raw'] >= limit:
+                info.update({'lokasi': key['lokasi'], 'provinsi': key['provinsi'], 'kabkot': key['kabkot'],
+                             'sensorID': key['sensorID'], 'loss': key['loss']})
+                if key['loss'] > 50000000:
+                    content_1.append(info)
+                elif 10000000 <= key['loss'] <= 50000000:
+                    content_2.append(info)
+                elif 0 < key['loss'] < 10000000:
+                    content_3.append(info)
             info = {}
         data = {'total_level_1': len(content_1), 'total_level_2': len(content_2), 'total_level_3': len(content_3),
                 'details':{'level1': content_1, 'level2': content_2, 'level3': content_3}}
