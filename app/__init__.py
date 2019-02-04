@@ -34,8 +34,8 @@ db=client.dashboard
 setting = db.settings
 
 now = datetime.datetime.now()
-last_month = now.month-1 if now.month > 1 else 12
-last_year = now.year - 1
+last_month = now.month - 1 if now.month > 1 else 12
+last_year = now.year
 
 prefix = "/api/table.json?content=sensors&id="
 url_uptime = "&columns=objid,device,sensor,lastvalue,status,message&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=3"
@@ -269,8 +269,10 @@ def create_app(config_name):
     def Down(objectID):
       global url_downtimesince
       global url_dashboard
+      print(url_dashboard)
       loss = getFilterData(url_downtimesince, objectID)
       loss_dashboard = getAPIDashboard(url_dashboard, objectID)
+      print(loss_dashboard)
       hari = datetime.date.today()
       first = hari.replace(day=1)
       lastMonth = first - datetime.timedelta(days=1)
@@ -293,10 +295,12 @@ def create_app(config_name):
       "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'],
       "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
+      print(loss_dashboard)
       for i in range(len(a)):
         x = collection.find_one({"pingID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
+          #print(data)
           for indx in b:
              if (indx['id'] == data['pingID']):
                 data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan': {'tagihan': indx['tagihan'], \
@@ -305,6 +309,7 @@ def create_app(config_name):
           info.update({'downtimesince_raw' : a[i]['downtimesince_raw'], 'noID': i})
           content.append(info)
         info = {}
+      #print(content)
       for item in content:
         if item['downtimesince_raw'] == "":
           item['downtimesince_raw'] = 0
