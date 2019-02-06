@@ -43,6 +43,7 @@ url_ping = "&columns=objid,sensor,lastvalue,status,message&sortby=lastvalue&filt
 url_traffic = "&columns=objid,sensor,lastvalue,status&sortby=-lastvalue&filter_type=snmptraffic&username=prtguser&password=Bp3t1OK!&filter_status=3"
 url_downtimesince = "&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"
 url_all = "&columns=objid,device,sensor,lastvalue,status,message,downtimesince&sortby=-lastvalue&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!"
+url_unknown = "&columns=objid,sensor,lastvalue,status,message,downtimesince&sortby=downtimesince&filter_type=snmpuptime&username=prtguser&password=Bp3t1OK!&filter_status=1"
 url_dashboard = "http://182.23.61.67/api/getdatabase/" + str(last_month) + "/" + str(last_year) + "/old/"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -789,6 +790,22 @@ def create_app(config_name):
                          'uptime_avg': uptime_avg})
             #print(info)
             content.append(info)
+        return jsonify(content)
+
+    @app.route("/api/v1/<objectID>/unknown")
+    def getUnknown(objectID):
+        global url_unknown
+        unknown = getFilterData(url_unknown, objectID)
+        collection = db[getCollection(objectID)]
+        info = {}
+        content = []
+        for key in unknown:
+            x = collection.find_one({'sensorID': key['objid']})
+            if x is not None:
+                data = json.loads(json_util.dumps(x))
+                info.update(data)
+                content.append(info)
+            info = {}
         return jsonify(content)
 
     return app
