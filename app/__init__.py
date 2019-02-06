@@ -189,16 +189,17 @@ def create_app(config_name):
       info = {}
       content = []
       a = [{"id": d['objid'], "status": d['status']} for d in status_all if 'objid' and 'status' in d]
-      b = [{"id": d['sensorPing'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'],
+      b = [{"id": d['sensorID_new'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'],
       "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'],
       "new_harga": d['new_harga'], } for d in status_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
+      #print(b)
       for i in range(len(a)):
-        x = collection.find_one({"pingID": a[i]['id']})
+        x = collection.find_one({"sensorID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
           for indx in b:
-             if (indx['id'] == data['pingID']):
+             if (indx['id'] == data['sensorID']):
                 data.update({'sla':{'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']}, 'tagihan':{'tagihan': indx['tagihan'], \
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']}, 'harga': {'harga': indx['harga'], 'old_harga': indx['old_harga'], 'new_harga': indx['new_harga']}})
                 info.update(data)
@@ -269,10 +270,10 @@ def create_app(config_name):
     def Down(objectID):
       global url_downtimesince
       global url_dashboard
-      print(url_dashboard)
+      #print(url_dashboard)
       loss = getFilterData(url_downtimesince, objectID)
       loss_dashboard = getAPIDashboard(url_dashboard, objectID)
-      print(loss_dashboard)
+      #print(loss_dashboard)
       hari = datetime.date.today()
       first = hari.replace(day=1)
       lastMonth = first - datetime.timedelta(days=1)
@@ -288,18 +289,18 @@ def create_app(config_name):
       content = []
       a = [{"id": d['objid'], "downtimesince_raw": d['downtimesince_raw'], "status": d['status']}
       for d in loss if 'objid' and 'downtimesince_raw' and 'status' in d]
-      b = [{"id": d['sensorPing'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'],
+      b = [{"id": d['sensorID_new'], "tagihan": d['tagihan'], "tagihan_new": d['tagihan_after'], "tagihan_old": d['tagihan_before'],
       "sla": d['snmp'], "old_sla": d['snmp_before'], "new_sla": d['snmp_after'], "harga": d['harga'], "old_harga": d['old_harga'],
       "new_harga": d['new_harga'], } for d in loss_dashboard if 'sensorPing' and 'snmp' and 'tagihan' and 'tagihan_after' and 'tagihan_before' and
       'snmp_before' and 'snmp_after' and 'harga' and 'old_harga' and 'new_harga' in d]
-      print(loss_dashboard)
+      #print(loss_dashboard)
       for i in range(len(a)):
         x = collection.find_one({"sensorID": a[i]['id']})
         if x is not None:
           data = json.loads(json_util.dumps(x))
           #print(data)
           for indx in b:
-             if (indx['id'] == data['sensorID_new']):
+             if (indx['id'] == data['sensorID']):
                 data.update({'sla': {'sla': indx['sla'], 'old_sla': indx['old_sla'], 'new_sla': indx['new_sla']},
                              'tagihan': {'tagihan': indx['tagihan'],
                   'old_tagihan': indx['tagihan_old'], 'new_tagihan': indx['tagihan_new']},
@@ -508,13 +509,11 @@ def create_app(config_name):
                total = 0
                gb = 0
                for item in data['histdata']:
-                     #print(item['Traffic Total (volume)'])
                  if item['Traffic Total (volume)'] == "":
                     item['Traffic Total (volume)'] = 0.0
                  total = total + float(item['Traffic Total (volume)'])
                gb = (total / 1073741824) / daysinMonth
                key['total_volume'] = gb
-               #print("Rata-rata Traffic Bulan ini = {} GBytes". format(gb))
          except (KeyError, ValueError):
             key['total_volume'] = 0.0
             pass
@@ -711,7 +710,7 @@ def create_app(config_name):
     def getLossLevel(objectID):
         data = filterAPI(objectID)
         limit = int(data['limit'])
-        print(limit)
+        #print(limit)
         url = "http://localhost:5000/api/v1/{}/down".format(objectID)
         response = requests.get(url)
         raw_data = json_util.loads(response.text)
@@ -758,9 +757,9 @@ def create_app(config_name):
             data_uptime = getXMLfromAPI(url_uptime)
             data_ping = getXMLfromAPI(url_ping)
             data_traffic = getXMLfromAPI(url_traffic)
-            pprint(data_uptime)
-            pprint(data_ping)
-            pprint(data_traffic)
+            #pprint(data_uptime)
+            #pprint(data_ping)
+            #pprint(data_traffic)
             ping_up = "{} {}".format(str(data_ping['historicdata']['uptimepercent']), str(data_ping['historicdata']['uptime']))
             ping_down = "{} {}".format(str(data_ping['historicdata']['downtimepercent']), str(data_ping['historicdata']['downtime']))
             try:
@@ -788,7 +787,7 @@ def create_app(config_name):
                          'traffic_up': traffic_up, 'traffic_down': traffic_down, 'traffic_avg': traffic_avg,
                          'traffic_total': traffic_total, 'uptime_up': uptime_up, 'uptime_down': uptime_down,
                          'uptime_avg': uptime_avg})
-            print(info)
+            #print(info)
             content.append(info)
         return jsonify(content)
 
