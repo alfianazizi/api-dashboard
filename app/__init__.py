@@ -674,27 +674,17 @@ def create_app(config_name):
       img = Image.open(r.raw)
       return serve_image(img)
 
-    @app.route("/api/v1/<objectID>/changeemail", methods=['POST'])
-    def changeEmail(objectID):
-        email = request.form['email']
-        #print(email)
-        data = filterAPI(objectID)
-        users = db.users
-        if email != "":
-            users.update_one({'isp': data['isp']}, {'$set': {'email': email}})
-            return jsonify({'ok': True, 'message': 'Email Updated'}), 200
-        else:
-            return jsonify({'ok': False, 'message': 'Value not valid!'}), 400
-
-    @app.route("/api/v1/<objectID>/send", methods=['POST'])
-    def sendMail(objectID):
-        subject = request.form['subject']
-        body = request.form['body']
-        data = filterAPI(objectID)
-        user_email = data['email']
-        msg = Message(subject, sender='apollo@kirei.co.id', recipients=[user_email])
-        msg.html = body
-        mail.send(msg)
+    @app.route("/api/v1/send", methods=['POST'])
+    def sendMail():
+        content = request.get_json()
+        subject = content['subject']
+        body = content['body']
+        users = content['users']
+        with mail.connect() as conn:
+            for user in users:
+                msg = Message(subject, sender='apollo@kirei.co.id', recipients=[user])
+                msg.html = body
+                conn.send(msg)
         return 'Message Sent!'
 
     @app.route("/api/v1/<objectID>/getsummary/<int:month>/<int:year>")
