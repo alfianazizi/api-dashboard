@@ -645,7 +645,7 @@ def create_app(config_name):
       login_pass = hashlib.md5(password.encode('utf-8'))
       if existing_user:
         if login_pass.hexdigest() == existing_user['password']:
-          return {"id": str(existing_user['_id']), 'email': existing_user['email'], 'cluster': existing_user['cluster']}
+          return {"id": str(existing_user['_id']), 'cluster': existing_user['cluster']}
         return 'Username or password incorrect'
       return 'Username or password incorrect'
 
