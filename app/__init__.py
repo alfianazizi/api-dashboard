@@ -23,6 +23,7 @@ from xml.etree import ElementTree
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from PIL import Image
 from flask_mail import Mail, Message
+from celery import Celery
 
 # local import
 from instance.config import app_config
@@ -56,6 +57,11 @@ def create_app(config_name):
     app.config['MAIL_PORT'] = 25
     app.config['MAIL_USE_SSL'] = False
     app.config['MAIL_USE_TLS'] = False
+    app.config['CELERY_BROKER_URL'] = 'amqp://kirei:apollo@localhost:5672/apollo'
+
+    celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+
     CORS(app)
     mail = Mail(app)
 
@@ -705,6 +711,7 @@ def create_app(config_name):
         url = "http://localhost:5000/api/v1/{}/down".format(objectID)
         response = requests.get(url)
         raw_data = json_util.loads(response.text)
+        print(raw_data)
         info = {}
         content_1 = []
         content_2 = []
